@@ -15,7 +15,7 @@ public class Issue5663 {
     }
 
     public void form2button() {
-        result = "form2button";
+        result = "form2result";
     }
 
     public String getResult() {
