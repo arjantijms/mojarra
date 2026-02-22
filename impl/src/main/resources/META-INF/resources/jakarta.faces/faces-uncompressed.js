@@ -190,8 +190,9 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
          * @param context An object containing the request context, including the following properties:
          * the source element, per call onerror callback function, per call onevent callback function, the render
          * instructions, the submitting form ID, the naming container ID and naming container prefix.
+         * @param hiddenStateFieldName The hidden state field name, e.g. jakarta.faces.ViewState or jakarta.faces.ClientWindow
          */
-        const getFormsToUpdate = function getFormsToUpdate(context) {
+        const getFormsToUpdate = function getFormsToUpdate(context, hiddenStateFieldName) {
             const formsToUpdate = [];
 
             const add = function(element) {
@@ -223,6 +224,22 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
                     const clientIds = context.render.split(SPACE);
                     for ( const clientId of clientIds )
                         add(document.getElementById(clientId));
+                }
+            }
+
+            var allForms = document.getElementsByTagName("form");
+
+            for (var i = 0; i < allForms.length; i++) {
+                var form = allForms[i];
+
+                if (formsToUpdate.indexOf(form) < 0
+                    && form.method == "post"
+                    && form.id
+                    && form.elements
+                    && form.id.indexOf(context.namingContainerPrefix) == 0
+                    && typeof getHiddenStateField(form, hiddenStateFieldName, context.namingContainerPrefix) == "undefined")
+                {
+                    formsToUpdate.push(form);
                 }
             }
 
@@ -833,7 +850,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
         const updateHiddenStateFields = function updateHiddenStateFields(updateElement, context, hiddenStateFieldName) {
             const firstChild = updateElement.firstChild;
             const state = (typeof firstChild.wholeText !== 'undefined') ? firstChild.wholeText : firstChild.nodeValue;
-            const formsToUpdate = getFormsToUpdate(context);
+            const formsToUpdate = getFormsToUpdate(context, hiddenStateFieldName);
 
             for ( const form of formsToUpdate ) {
                 let field = getHiddenStateField(form, hiddenStateFieldName, context.namingContainerPrefix);
