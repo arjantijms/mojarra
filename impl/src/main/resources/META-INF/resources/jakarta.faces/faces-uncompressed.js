@@ -428,7 +428,7 @@ if (!((faces && faces.specversion && faces.specversion >= 23000 ) &&
          * the source element, per call onerror callback function, per call onevent callback function, the render
          * instructions, the submitting form ID, the naming container ID and naming container prefix.
          */
-        var getFormsToUpdate = function getFormsToUpdate(context) {
+        var getFormsToUpdate = function getFormsToUpdate(context, hiddenStateFieldName) {
             var formsToUpdate = [];
 
             var add = function(element) {
@@ -468,6 +468,22 @@ if (!((faces && faces.specversion && faces.specversion >= 23000 ) &&
                             add(document.getElementById(clientIds[i]));
                         }
                     }
+                }
+            }
+
+            var allForms = document.getElementsByTagName("form");
+
+            for (var i = 0; i < allForms.length; i++) {
+                var form = allForms[i];
+
+                if (formsToUpdate.indexOf(form) < 0
+                    && form.method == "post"
+                    && form.id
+                    && form.elements
+                    && form.id.indexOf(context.namingContainerPrefix) == 0
+                    && typeof getHiddenStateField(form, hiddenStateFieldName, context.namingContainerPrefix) == "undefined")
+                {
+                    formsToUpdate.push(form);
                 }
             }
 
@@ -1356,7 +1372,7 @@ if (!((faces && faces.specversion && faces.specversion >= 23000 ) &&
         var updateHiddenStateFields = function updateHiddenStateFields(updateElement, context, hiddenStateFieldName) {
             var firstChild = updateElement.firstChild;
             var state = (typeof firstChild.wholeText !== 'undefined') ? firstChild.wholeText : firstChild.nodeValue;
-            var formsToUpdate = getFormsToUpdate(context);
+            var formsToUpdate = getFormsToUpdate(context, hiddenStateFieldName);
 
             for (var i = 0; i < formsToUpdate.length; i++) {
                 var formToUpdate = formsToUpdate[i];
