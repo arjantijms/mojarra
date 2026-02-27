@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, 2026 Contributors to Eclipse Foundation.
  * Copyright (c) 1997, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -27,10 +28,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.sun.faces.mock.MockCDIProvider;
 import com.sun.faces.mock.MockHttpServletRequest;
 import com.sun.faces.mock.MockHttpServletResponse;
 import com.sun.faces.mock.MockServletContext;
 
+import jakarta.enterprise.inject.spi.CDI;
 import jakarta.faces.application.Application;
 import jakarta.faces.application.ApplicationFactory;
 import jakarta.faces.context.FacesContext;
@@ -62,6 +65,9 @@ public class FactoryFinderTestCase {
     // Set up instance variables required by this test case.
     @BeforeEach
     public void setUp() throws Exception {
+        // Set up CDI
+        CDI.setCDIProvider(new MockCDIProvider());
+
         Method method = FacesContext.class.getDeclaredMethod("setCurrentInstance", FacesContext.class);
         method.setAccessible(true);
         method.invoke(null, new Object[]{null});
