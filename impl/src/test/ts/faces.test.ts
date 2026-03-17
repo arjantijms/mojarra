@@ -4,6 +4,7 @@
 export {};
 
 const FACES_JS = "../../main/resources/META-INF/resources/jakarta.faces/faces-uncompressed.js";
+const POM_XML = "../../../pom.xml";
 
 declare global {
     var faces: Record<string, unknown>;
@@ -12,6 +13,25 @@ declare global {
 
 import fs from "fs";
 import path from "path";
+
+/**
+ * Parse the project version from impl/pom.xml and derive expected specversion and implversion.
+ * E.g. pom version "4.0.15-SNAPSHOT" -> specversion 40000, implversion 15.
+ */
+function parsePomVersions(): { specversion: number; implversion: number } {
+    const pom = fs.readFileSync(path.resolve(__dirname, POM_XML), "utf-8");
+    const match = pom.match(/<parent>[\s\S]*?<version>(\d+)\.(\d+)\.(\d+)(-[^<]+)?<\/version>[\s\S]*?<\/parent>/);
+    if (!match) {
+        throw new Error("Could not parse project version from pom.xml <parent> element");
+    }
+    const [, major, minor, patch] = match;
+    return {
+        specversion: parseInt(major) * 10000 + parseInt(minor) * 100,
+        implversion: parseInt(patch),
+    };
+}
+
+const pomVersions = parsePomVersions();
 
 beforeAll(() => {
     const source = fs.readFileSync(path.resolve(__dirname, FACES_JS), "utf-8");
@@ -58,14 +78,60 @@ describe("faces namespace", () => {
 });
 
 describe("faces.specversion", () => {
-    test("is 40000", () => {
-        expect(faces.specversion).toBe(40000);
+    test("matches spec major.minor from pom.xml", () => {
+        expect(faces.specversion).toBeGreaterThanOrEqual(pomVersions.specversion);
+        expect(faces.specversion).toBeLessThanOrEqual(pomVersions.specversion + 99);
     });
 });
 
 describe("faces.implversion", () => {
-    test("is 4", () => {
-        expect(faces.implversion).toBe(4);
+    test("matches patch version from pom.xml", () => {
+        expect(faces.implversion).toBe(pomVersions.implversion);
+    });
+});
+
+describe("version guard", () => {
+    function reloadFacesJs(): void {
+        const source = fs.readFileSync(path.resolve(__dirname, FACES_JS), "utf-8");
+        const evaluated = source
+            .replace("#{facesContext.namingContainerSeparatorChar}", ":")
+            .replace("#{facesContext.externalContext.requestContextPath}", "/test");
+        const script = document.createElement("script");
+        script.textContent = evaluated;
+        document.head.appendChild(script);
+    }
+
+    test("skips re-initialization when same version is already loaded", () => {
+        const origSpec = faces.specversion;
+        const origImpl = faces.implversion;
+        reloadFacesJs();
+        expect(faces.specversion).toBe(origSpec);
+        expect(faces.implversion).toBe(origImpl);
+    });
+
+    test("re-initializes when a lower specversion is present", () => {
+        (faces as Record<string, unknown>).specversion = 1;
+        reloadFacesJs();
+        expect(faces.specversion).toBeGreaterThanOrEqual(pomVersions.specversion);
+    });
+
+    test("re-initializes when a lower implversion is present", () => {
+        (faces as Record<string, unknown>).implversion = 0;
+        reloadFacesJs();
+        expect(faces.implversion).toBe(pomVersions.implversion);
+    });
+
+    test("re-initializes when previous specversion is only one less than current", () => {
+        const original = faces.specversion as number;
+        (faces as Record<string, unknown>).specversion = original - 1;
+        reloadFacesJs();
+        expect(faces.specversion).toBe(original);
+    });
+
+    test("re-initializes when previous implversion is only one less than current", () => {
+        (faces as Record<string, unknown>).implversion = pomVersions.implversion - 1;
+        reloadFacesJs();
+        expect(faces.implversion).toBe(pomVersions.implversion);
     });
 });
 

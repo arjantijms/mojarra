@@ -25,7 +25,7 @@
 
 // Detect if this is already loaded, and if loaded, if it's a higher version
 if (!((faces && faces.specversion && faces.specversion >= 40000 ) &&
-      (faces.implversion && faces.implversion >= 4))) {
+      (faces.implversion && faces.implversion >= 15))) {
 
     /**
      * <span class="changed_modified_2_2">The top level global namespace
@@ -3577,7 +3577,7 @@ if (!((faces && faces.specversion && faces.specversion >= 40000 ) &&
      * <code>faces.specversion</code>
      * This number is implementation dependent.</p>
      */
-    faces.implversion = 4;
+    faces.implversion = 15;
 
 
 } //end if version detection block
