@@ -2056,12 +2056,18 @@ if (!((faces && faces.specversion && faces.specversion >= 23000 ) &&
                 }
             }
 
-            if (!sent && faces.getProjectStage() === "Development") {
-                if (status == "serverError") {
-                    alert("serverError: " + serverErrorName + " " + serverErrorMessage);
+            if (!sent) {
+                var errorMessage = status == "serverError"
+                    ? "serverError: " + serverErrorName + " " + serverErrorMessage
+                    : status + ": " + data.description;
+
+                if (faces.getProjectStage() === "Development") {
+                    alert(errorMessage);
                 } else {
-                    alert(status + ": " + data.description);
+                    console.error(errorMessage);
                 }
+
+                console.warn("No faces.ajax.addOnError handler registered to handle this error. Register one to customize error handling.");
             }
         };
 
