@@ -19,13 +19,13 @@
 
 /**
  @project Faces JavaScript Library
- @version 2.2
+ @version 4.0
  @description This is the standard implementation of the Faces JavaScript Library.
  */
 
 // Detect if this is already loaded, and if loaded, if it's a higher version
-if (!((faces && faces.specversion && faces.specversion >= 23000 ) &&
-      (faces.implversion && faces.implversion >= 3))) {
+if (!((faces && faces.specversion && faces.specversion >= 40000 ) &&
+      (faces.implversion && faces.implversion >= 4))) {
 
     /**
      * <span class="changed_modified_2_2">The top level global namespace
@@ -3569,7 +3569,7 @@ if (!((faces && faces.specversion && faces.specversion >= 23000 ) &&
      * minor release number, leftmost digits, major release number.
      * This number may only be incremented by a new release of the specification.</p>
      */
-    faces.specversion = 23000;
+    faces.specversion = 40000;
 
     /**
      * <p>An integer specifying the implementation version that this file implements.
@@ -3577,7 +3577,7 @@ if (!((faces && faces.specversion && faces.specversion >= 23000 ) &&
      * <code>faces.specversion</code>
      * This number is implementation dependent.</p>
      */
-    faces.implversion = 3;
+    faces.implversion = 4;
 
 
 } //end if version detection block
