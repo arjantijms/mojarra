@@ -165,6 +165,7 @@ describe("faces.ajax: fallback error handling without registered handler", () =>
 
         expect(onerrorSpy).toHaveBeenCalledTimes(1);
         expect(onerrorSpy.mock.calls[0][0]).toContain("httpError");
+        expect(onerrorSpy.mock.calls[0][0]).toContain("WARNING: No faces.ajax.addOnError handler registered");
         expect(onerrorSpy.mock.calls[0][1]).toBe("jakarta.faces:faces.js");
         expect(onerrorSpy.mock.calls[0][4]).toBeInstanceOf(Error);
 
@@ -183,6 +184,7 @@ describe("faces.ajax: fallback error handling without registered handler", () =>
 
         expect(onerrorSpy).toHaveBeenCalledTimes(1);
         expect(onerrorSpy.mock.calls[0][0]).toContain("httpError");
+        expect(onerrorSpy.mock.calls[0][0]).toContain("WARNING: No faces.ajax.addOnError handler registered");
         expect(onerrorSpy.mock.calls[0][1]).toBe("jakarta.faces:faces.js");
 
         window.onerror = null;

@@ -2073,11 +2073,14 @@ if (!((faces && faces.specversion && faces.specversion >= 40000 ) &&
                     console.error(errorMessage);
                 }
 
+                var warnMessage = "No faces.ajax.addOnError handler registered to handle this error. Register one to customize error handling.";
+
                 if (window.onerror) {
-                    window.onerror(errorMessage, "jakarta.faces:faces.js", 0, 0, new Error(errorMessage));
+                    var onerrorMessage = errorMessage + " WARNING: " + warnMessage;
+                    window.onerror(onerrorMessage, "jakarta.faces:faces.js", 0, 0, new Error(onerrorMessage));
                 }
 
-                console.warn("No faces.ajax.addOnError handler registered to handle this error. Register one to customize error handling.");
+                console.warn(warnMessage);
             }
         };
 
