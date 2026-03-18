@@ -418,7 +418,7 @@ describe("faces.getClientWindow", () => {
         form = document.createElement("form");
         const input = Object.assign(document.createElement("input"), {
             type: "hidden",
-            name: "myForm:jakarta.faces.ClientWindow",
+            name: "portletViewId:jakarta.faces.ClientWindow",
             value: "ns1",
         });
         form.appendChild(input);

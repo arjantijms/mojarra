@@ -2669,7 +2669,9 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
          * @ignore
          */
         const getWindowIdElement = function(form) {
-            return getFormInputElementByName(form,CLIENT_WINDOW_PARAM);
+            // Try exact name first, then fall back to namespaced name (e.g. "viewId:jakarta.faces.ClientWindow" in portlet environments)
+            return getFormInputElementByName(form, CLIENT_WINDOW_PARAM)
+                || form.querySelector("input[name$='" + faces.separatorchar + CLIENT_WINDOW_PARAM + "']");
         };
 
         const fetchWindowIdFromForms = function(forms) {
