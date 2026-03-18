@@ -136,6 +136,7 @@ describe("mojarra namespace", () => {
         cljs: "function",
         facescbk: "function",
         ab: "function",
+        ael: "function",
         l: "function",
     };
 
@@ -642,6 +643,96 @@ describe("mojarra.ab", () => {
 
         // ab sets the property directly on the options object before passing to faces.ajax.request
         expect(op["jakarta.faces.behavior.event"]).toBe("overridden");
+    });
+});
+
+// ---- ael: add event listener ----
+
+describe("mojarra.ael", () => {
+    let div: HTMLDivElement;
+
+    beforeEach(() => {
+        div = document.createElement("div");
+        div.id = "ael-test";
+        document.body.appendChild(div);
+    });
+
+    afterEach(() => {
+        div?.remove();
+    });
+
+    test("attaches click event listener to element by id", () => {
+        let clicked = false;
+        (moj().ael as Function)("ael-test", "click", () => { clicked = true; });
+        div.click();
+        expect(clicked).toBe(true);
+    });
+
+    test("attaches non-click event listener", () => {
+        let focused = false;
+        (moj().ael as Function)("ael-test", "focus", () => { focused = true; });
+        div.dispatchEvent(new Event("focus"));
+        expect(focused).toBe(true);
+    });
+
+    test("passes event object to handler", () => {
+        let receivedEvent: Event | null = null;
+        (moj().ael as Function)("ael-test", "click", (e: Event) => { receivedEvent = e; });
+        div.click();
+        expect(receivedEvent).toBeInstanceOf(Event);
+        expect(receivedEvent!.type).toBe("click");
+    });
+
+    test("multiple listeners on same element and event", () => {
+        const order: number[] = [];
+        (moj().ael as Function)("ael-test", "click", () => { order.push(1); });
+        (moj().ael as Function)("ael-test", "click", () => { order.push(2); });
+        div.click();
+        expect(order).toEqual([1, 2]);
+    });
+
+    test("multiple listeners on same element for different events", () => {
+        let clicked = false;
+        let hovered = false;
+        (moj().ael as Function)("ael-test", "click", () => { clicked = true; });
+        (moj().ael as Function)("ael-test", "mouseover", () => { hovered = true; });
+
+        div.click();
+        expect(clicked).toBe(true);
+        expect(hovered).toBe(false);
+
+        div.dispatchEvent(new Event("mouseover"));
+        expect(hovered).toBe(true);
+    });
+
+    test("throws when element id does not exist", () => {
+        expect(() => (moj().ael as Function)("nonexistent", "click", () => {})).toThrow();
+    });
+
+    test("listener not called before event fires", () => {
+        let called = false;
+        (moj().ael as Function)("ael-test", "click", () => { called = true; });
+        expect(called).toBe(false);
+    });
+
+    test("works with custom events", () => {
+        let detail: unknown = null;
+        (moj().ael as Function)("ael-test", "myCustomEvent", (e: CustomEvent) => { detail = e.detail; });
+        div.dispatchEvent(new CustomEvent("myCustomEvent", { detail: "payload" }));
+        expect(detail).toBe("payload");
+    });
+
+    test("works with input elements", () => {
+        const input = document.createElement("input");
+        input.id = "ael-input-test";
+        document.body.appendChild(input);
+
+        let changed = false;
+        (moj().ael as Function)("ael-input-test", "change", () => { changed = true; });
+        input.dispatchEvent(new Event("change"));
+        expect(changed).toBe(true);
+
+        input.remove();
     });
 });
 
