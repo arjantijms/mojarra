@@ -2073,6 +2073,10 @@ if (!((faces && faces.specversion && faces.specversion >= 40000 ) &&
                     console.error(errorMessage);
                 }
 
+                if (window.onerror) {
+                    window.onerror(errorMessage, "jakarta.faces:faces.js", 0, 0, new Error(errorMessage));
+                }
+
                 console.warn("No faces.ajax.addOnError handler registered to handle this error. Register one to customize error handling.");
             }
         };
