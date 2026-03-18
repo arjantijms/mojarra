@@ -1,9 +1,10 @@
 /**
- * Tests for the top-level `faces` namespace exposed by faces-uncompressed.js.
+ * Tests for the top-level `faces` namespace exposed by faces.js.
  */
 export {};
 
-const FACES_JS = "../../main/resources/META-INF/resources/jakarta.faces/faces-uncompressed.js";
+const FACES_JS_UNCOMPRESSED = "../../main/resources/META-INF/resources/jakarta.faces/faces-uncompressed.js";
+const FACES_JS = "../../../target/generated-resources/yui/META-INF/resources/jakarta.faces/faces.js";
 
 declare global {
     var faces: Record<string, unknown>;
@@ -18,7 +19,7 @@ import path from "path";
  * E.g. @version 4.0.15 -> specversion 40000, implversion 15.
  */
 function parseJsVersions(): { specversion: number; implversion: number } {
-    const source = fs.readFileSync(path.resolve(__dirname, FACES_JS), "utf-8");
+    const source = fs.readFileSync(path.resolve(__dirname, FACES_JS_UNCOMPRESSED), "utf-8");
     const match = source.match(/@version\s+(\d+)\.(\d+)\.(\d+)/);
     if (!match) {
         throw new Error("Could not parse @version tag from faces-uncompressed.js");
