@@ -121,9 +121,6 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
      * append a new pair of parameter=value to a query string
      * @ignore
      */
-    const appendToQueryString = function appendToQueryString( queryString , name, value) {
-        return queryString + ( (queryString.length > 0 ? "&" : EMPTY) + encodeURIComponent(name) + "=" + encodeURIComponent(value) );
-    };
 
     /**
      * return true if one of the dom elements contains
@@ -1381,19 +1378,19 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
                     const formData = isMultiPart ? new FormData(context.form) : undefined;
 
                     // Add parameters encoded or multipart
+                    const params = new URLSearchParams(req.queryString);
                     for ( const i of Object.keys(req.parameters) ) {
                         // if is multipart request -> add parameter to FormData
                         if ( isMultiPart ) {
                             formData.append(i,req.parameters[i]);
                         }
-                        // else is a normal post request -> add encoded request query string to queryString for POST
+                        // else is a normal post request -> add to URLSearchParams for POST
                         else {
-                            if (req.queryString.length > 0) req.queryString += "&";
-                            req.queryString += encodeURIComponent(i) + "=" + encodeURIComponent(req.parameters[i]);
+                            params.append(i, req.parameters[i]);
                         }
                     }
+                    req.queryString = params.toString();
 
-                    // GET Request
                     if (req.method === "GET") {
                         if (req.queryString.length > 0) {
                             req.url += ((req.url.indexOf("?") > -1) ? "&" : "?") + req.queryString;
@@ -1404,7 +1401,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
                     req.xmlReq.open(req.method, req.url, req.async);
 
                     // note that we are including the charset=UTF-8 as part of the content type (even
-                    // if encodeURIComponent encodes as UTF-8), because with some
+                    // if URLSearchParams encodes as UTF-8), because with some
                     // browsers it will not be set in the request.  Some server implementations need to
                     // determine the character encoding from the request header content type.
                     if (req.method === "POST") {
@@ -2544,22 +2541,21 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
         // array of element id => array of existing dom element
         const partialExecuteDomElements = partialExecuteIds.map(getElemById).filter( elem => !!elem );
 
-        // the query string
-        let qString = EMPTY;
+        const params = new URLSearchParams();
 
         // if the partialExecuteIds does not include the form.id,
         // then add it because it's required by the spec to be always included!
         if ( partialExecuteIds && !partialExecuteIds.includes(form.id) ) {
-            qString = appendToQueryString(qString,form.id,form.id);
+            params.append(form.id, form.id);
         }
 
-        // add encoded name=value string to query string parts array.
+        // add name=value to params.
         // If partialExecuteIds is defined
         // then add the field only if there is a child element with his name
         // inside one of the element identified with the id contained in "partialExecuteIds" array (partial submit)
         const addField = function(name, value) {
             const add = !partialExecuteIds || partialExecuteIds.includes(name) || containsNamedChild(partialExecuteDomElements,name);
-            if (add) qString = appendToQueryString(qString,name,value);
+            if (add) params.append(name, value);
         };
 
         const els = form.elements;
@@ -2605,7 +2601,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
             }
         }
 
-        return qString;
+        return params.toString();
     }
 
 
@@ -2631,13 +2627,9 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
     faces.getViewState = function(form) {
         if (!form) throw new Error("faces.getViewState:  form must be set");
 
-        // the query string
-        let qString = EMPTY;
-
-        // add encoded name=value string to query string parts array.
-        // If partialExecuteIds is defined then add the field only if the name is inside the "partialExecuteIds" array (partial submit)
+        const params = new URLSearchParams();
         const addField = function(name, value) {
-            qString += ( (qString.length > 0 ? "&" : EMPTY) + encodeURIComponent(name) + "=" + encodeURIComponent(value) );
+            params.append(name, value);
         };
 
         const els = form.elements;
@@ -2682,7 +2674,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
                 }
             }
         }
-        return qString;
+        return params.toString();
     };
 
     /**
