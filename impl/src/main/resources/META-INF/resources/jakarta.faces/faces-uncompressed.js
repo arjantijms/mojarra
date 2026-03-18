@@ -23,7 +23,7 @@
  */
 
 // Detect if this is already loaded, and if loaded, if it's a higher version
-if ( !( (window.faces && window.faces.specversion && window.faces.specversion >= 41000 )
+if ( !( (window.faces && window.faces.specversion && window.faces.specversion >= 40100 )
     && (window.faces.implversion && window.faces.implversion >= 7)) ) {
 
     // --- JS Lang --------------------------------------------------------------------
@@ -3003,7 +3003,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
      * minor release number, leftmost digits, major release number.
      * This number may only be incremented by a new release of the specification.</p>
      */
-    faces.specversion = 41000;
+    faces.specversion = 40100;
 
     /**
      * <p>An integer specifying the implementation version that this file implements.
