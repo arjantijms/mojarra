@@ -494,29 +494,22 @@ describe("faces.ajax.request: execute option", () => {
 
     test("@this resolves to source element id", () => {
         ajax().request(button, null, { execute: "@this" });
-        expect(lastXHR().body).toContain("jakarta.faces.partial.execute=");
-        expect(lastXHR().body).toContain("testButton");
+        expect(lastXHR().body).toContain("jakarta.faces.partial.execute=testButton");
     });
 
     test("@form resolves to form id", () => {
         ajax().request(button, null, { execute: "@form" });
-        expect(lastXHR().body).toContain("testForm");
+        expect(lastXHR().body).toContain("jakarta.faces.partial.execute=testButton%20testForm");
     });
 
     test("explicit ids are sent as-is", () => {
         ajax().request(button, null, { execute: "comp1 comp2" });
-        expect(lastXHR().body).toContain("jakarta.faces.partial.execute=");
-        expect(lastXHR().body).toContain("comp1");
-        expect(lastXHR().body).toContain("comp2");
+        expect(lastXHR().body).toContain("jakarta.faces.partial.execute=testButton%20comp1%20comp2");
     });
 
     test("source element is prepended to execute list if missing", () => {
         ajax().request(button, null, { execute: "other" });
-        const body = lastXHR().body!;
-        const match = body.match(/jakarta\.faces\.partial\.execute=([^&]*)/);
-        expect(match).not.toBeNull();
-        expect(decodeURIComponent(match![1])).toContain("testButton");
-        expect(decodeURIComponent(match![1])).toContain("other");
+        expect(lastXHR().body).toContain("jakarta.faces.partial.execute=testButton%20other");
     });
 });
 
@@ -553,21 +546,17 @@ describe("faces.ajax.request: render option", () => {
 
     test("@this resolves to source element id", () => {
         ajax().request(button, null, { render: "@this" });
-        expect(lastXHR().body).toContain("jakarta.faces.partial.render=");
-        expect(lastXHR().body).toContain("testButton");
+        expect(lastXHR().body).toContain("jakarta.faces.partial.render=testButton");
     });
 
     test("@form resolves to form id", () => {
         ajax().request(button, null, { render: "@form" });
-        expect(lastXHR().body).toContain("jakarta.faces.partial.render=");
-        expect(lastXHR().body).toContain("testForm");
+        expect(lastXHR().body).toContain("jakarta.faces.partial.render=testForm");
     });
 
     test("explicit ids are sent", () => {
         ajax().request(button, null, { render: "output1 output2" });
-        expect(lastXHR().body).toContain("jakarta.faces.partial.render=");
-        expect(lastXHR().body).toContain("output1");
-        expect(lastXHR().body).toContain("output2");
+        expect(lastXHR().body).toContain("jakarta.faces.partial.render=output1%20output2");
     });
 });
 
