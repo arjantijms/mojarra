@@ -280,12 +280,4 @@ public class FactoryFinderTestCase {
         FactoryFinder.releaseFactories();
     }
 
-    // ------------------------------------------- helpers
-    public static void printRelevantSystemProperties() {
-        System.out.println("++++++Relevant System Properties: ");
-        for (int i = 0, len = FACTORIES.length; i < len; i++) {
-            System.out.println(FACTORIES[i][0] + ": "
-                    + System.getProperty(FACTORIES[i][0]));
-        }
-    }
 }
