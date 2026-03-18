@@ -270,12 +270,12 @@
             </plugins>
         </pluginManagement>
         <plugins>
-            <!-- ###  C O M P R E S S  /  M I N I F Y   faces.js  ###   -->
+            <!-- Compress/minify faces.js -->
             <!-- https://blutorange.github.io/closure-compiler-maven-plugin/minify-mojo.html -->
             <plugin>
                 <groupId>com.github.blutorange</groupId>
                 <artifactId>closure-compiler-maven-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>2.32.0</version> <!-- 3.x requires Java 21 -->
                 <executions>
                     <!-- Process all files in the "includes" directory individually-->
                     <execution>
@@ -333,6 +333,9 @@
                 <configuration>
                     <trimStackTrace>false</trimStackTrace>
                     <argLine>--add-opens java.base/java.lang=ALL-UNNAMED</argLine>
+                    <systemPropertyVariables>
+                        <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
 

@@ -91,7 +91,6 @@ public class FacesConfigOrderingTestCase {
 		String message = "\n original: " + original + "\n expected: "
 				+ possibility1 + "\n actually: " + actually + "\n";
 		assertTrue(assertion, message);
-		System.out.println("testNoOrderingStartWithCab: Passed" + message);
 	}
 
     @Test
@@ -129,7 +128,6 @@ public class FacesConfigOrderingTestCase {
 		String message = "\n original: " + original + "\n expected: " + possibility1 +
 			"\n actually: " + actually + "\n";
 		assertTrue(assertion, message);
-		System.out.println("testCafteraStartWithCab: Passed" + message);
 	}
 
     @Test
@@ -183,7 +181,6 @@ public class FacesConfigOrderingTestCase {
 		String message = "\n original: " + original + "\n expected: " + possibility1 +
 			"\n actually: " + actually + "\n";
 		assertTrue(assertion, message);
-		System.out.println("testAafterD_BafterCbeforeOthers_CafterDbeforeB_startWithABCD: Passed" + message);
 	}
 
     @Test
@@ -238,7 +235,6 @@ public class FacesConfigOrderingTestCase {
 		String message = "\n original: " + original + "\n expected: " + possibility1 +
 			"\n actually: " + actually + "\n";
 		assertTrue(assertion, message);
-		System.out.println("testAafterD_BafterCbeforeOthers_CafterDbeforeB_startWithADBC: Passed" + message);
 
 	}
 
@@ -306,8 +302,6 @@ public class FacesConfigOrderingTestCase {
 			assertTrue(assertion, message);
 
 		}
-
-		System.out.println("testAafterD_BafterCbeforeOthers_CafterDbeforeB_shuffle: " + number + " shuffles passed.");
 
 	}
 
