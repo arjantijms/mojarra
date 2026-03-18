@@ -18,13 +18,13 @@
 
 /**
  @project Faces JavaScript Library
- @version 4.1
+ @version 4.1.7
  @description This is the standard implementation of the Faces JavaScript Library.
  */
 
 // Detect if this is already loaded, and if loaded, if it's a higher version
 if ( !( (window.faces && window.faces.specversion && window.faces.specversion >= 41000 )
-    && (window.faces.implversion && window.faces.implversion >= 4)) ) {
+    && (window.faces.implversion && window.faces.implversion >= 7)) ) {
 
     // --- JS Lang --------------------------------------------------------------------
     const UDEF = 'undefined';
@@ -3011,7 +3011,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
      * <code>faces.specversion</code>
      * This number is implementation dependent.</p>
      */
-    faces.implversion = 4;
+    faces.implversion = 7;
 
 
 } //end if version detection block
