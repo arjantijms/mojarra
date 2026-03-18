@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Contributors to Eclipse Foundation.
+ * Copyright (c) 2023, 2026 Contributors to Eclipse Foundation.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0, which is available at
@@ -29,7 +29,6 @@ import jakarta.enterprise.inject.spi.AnnotatedParameter;
 import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanAttributes;
-import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.Decorator;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.InjectionPoint;
@@ -40,6 +39,7 @@ import jakarta.enterprise.inject.spi.Interceptor;
 import jakarta.enterprise.inject.spi.ObserverMethod;
 import jakarta.enterprise.inject.spi.ProducerFactory;
 import jakarta.enterprise.inject.spi.el.ELAwareBeanManager;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -48,9 +48,9 @@ import java.util.Set;
 
 public class ELAwareBeanManagerWrapper implements ELAwareBeanManager {
 
-    BeanManager wrapped;
+    ELAwareBeanManager wrapped;
 
-    public ELAwareBeanManagerWrapper(BeanManager wrapped) {
+    public ELAwareBeanManagerWrapper(ELAwareBeanManager wrapped) {
         this.wrapped = wrapped;
     }
 
@@ -497,6 +497,11 @@ public class ELAwareBeanManagerWrapper implements ELAwareBeanManager {
     @Override
     public boolean isMatchingEvent(Type specifiedType, Set<Annotation> specifiedQualifiers, Type observedEventType, Set<Annotation> observedEventQualifiers) {
         return wrapped.isMatchingEvent(specifiedType, specifiedQualifiers, observedEventType, observedEventQualifiers);
+    }
+
+    @Override
+    public <T> T unwrapClientProxy(T reference) {
+        return wrapped.unwrapClientProxy(reference);
     }
 
 }

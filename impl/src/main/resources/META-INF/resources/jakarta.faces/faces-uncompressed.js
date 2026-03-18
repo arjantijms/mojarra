@@ -18,13 +18,13 @@
 
 /**
  @project Faces JavaScript Library
- @version 5.0
+ @version 5.0.0
  @description This is the standard implementation of the Faces JavaScript Library.
  */
 
 // Detect if this is already loaded, and if loaded, if it's a higher version
 if ( !( (window.faces && window.faces.specversion && window.faces.specversion >= 50000 )
-    && (window.faces.implversion && window.faces.implversion >= 5)) ) {
+    && (window.faces.implversion && window.faces.implversion >= 0)) ) {
 
     // --- JS Lang --------------------------------------------------------------------
     const UDEF = 'undefined';
@@ -44,12 +44,19 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
 
     /**
      * Get the nonce from faces.js script for CSP support.
+     * Captured at load time via document.currentScript for robustness, with DOM query fallback.
      * @ignore
      */
-    const getNonce = () => {
-        const thisScript = document.querySelector("script[src*='jakarta.faces.resource/faces.js']");
-        return isNotNull(thisScript) ? thisScript.nonce : undefined;
-    };
+    const getNonce = (() => {
+        const loadTimeNonce = document.currentScript ? document.currentScript.nonce : undefined;
+        return () => {
+            if (loadTimeNonce) {
+                return loadTimeNonce;
+            }
+            const thisScript = document.querySelector("script[src*='jakarta.faces.resource/faces.js']");
+            return isNotNull(thisScript) ? thisScript.nonce : undefined;
+        };
+    })();
 
     /**
      * Execute script with nonce for CSP support.
@@ -90,7 +97,11 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
     };
 
     /**
-     * get dom element or document child by name attribute
+     * get dom element or document child by name attribute or null if not found
+     * @param element {Element} the dom base element
+     * @param name {string} the value of the name attribute
+     * @return {Element} the first dom element with the name attribute equals to the passed param
+     * @see {Element#querySelector}
      * @ignore
      */
     const getElementByName = function(element, name) {
@@ -98,8 +109,9 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
     }
 
     /**
-     * get the input element inside a form identified by name attribute
+     * get the input element inside a form identified by name attribute or null if not found
      * @ignore
+     * @return {HTMLInputElement} the dom input element inside the passed form with matching name attribute
      */
     const getFormInputElementByName = function(form, inputElementName) {
         return inputElementName in form ? form[inputElementName] : getElementByName(form,inputElementName);
@@ -109,9 +121,6 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
      * append a new pair of parameter=value to a query string
      * @ignore
      */
-    const appendToQueryString = function appendToQueryString( queryString , name, value) {
-        return queryString + ( (queryString.length > 0 ? "&" : EMPTY) + encodeURIComponent(name) + "=" + encodeURIComponent(value) );
-    };
 
     /**
      * return true if one of the dom elements contains
@@ -187,22 +196,28 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
          * Get an array of all Faces form elements which need their view state to be updated.
          * This covers at least the form that submitted the request and any form that is covered in the render target list.
          *
-         * @param context An object containing the request context, including the following properties:
+         * @param context {Object} An object containing the request context, including the following properties:
          * the source element, per call onerror callback function, per call onevent callback function, the render
          * instructions, the submitting form ID, the naming container ID and naming container prefix.
+         * @param hiddenStateFieldName {string} The hidden state field name, e.g. jakarta.faces.ViewState or jakarta.faces.ClientWindow
+         * @return {Array<HTMLFormElement>} Get an array of all Faces form elements which need their view state to be updated.
          */
-        const getFormsToUpdate = function getFormsToUpdate(context) {
-            const formsToUpdate = [];
+        const getFormsToUpdate = function getFormsToUpdate(context, hiddenStateFieldName) {
+            const formsToUpdate = new Set();
 
-            const add = function(element) {
+            // return true if the passed element is a form
+            const isFormElement = (element) => element.nodeName && element.nodeName.toLowerCase() === FORM;
+
+            // return true if the passed form needs the view state hidden field
+            const isValidForm = (form) => form.method === "post" && form.id && form.elements && form.id.startsWith(context.namingContainerPrefix);
+
+            // if the passed DOM element is a form and is valid,
+            // then add to the forms to update,
+            // otherwise add all the valid forms in the descendants of the specified element
+            const add = (element) => {
                 if (element) {
-                    if (element.nodeName
-                        && element.nodeName.toLowerCase() === FORM
-                        && element.method === "post"
-                        && element.id
-                        && element.elements
-                        && element.id.startsWith(context.namingContainerPrefix) ) {
-                            formsToUpdate.push(element);
+                    if ( isFormElement(element) && isValidForm(element) ) {
+                        formsToUpdate.add(element);
                     }
                     else {
                         const forms = element.getElementsByTagName(FORM);
@@ -216,17 +231,36 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
                 add(document.getElementById(context.formId));
             }
 
+            const isRenderAll = context.render && contains(context.render,"@all");
+
             if (context.render) {
-                if ( contains(context.render,"@all") ) {
+                // if is render @all then add all the forms of the document
+                if ( isRenderAll ) {
                     add(document);
-                } else {
+                }
+                // otherwise add the forms taken from the render attribute
+                else {
                     const clientIds = context.render.split(SPACE);
                     for ( const clientId of clientIds )
                         add(document.getElementById(clientId));
                 }
             }
 
-            return formsToUpdate;
+            // second pass: we have to include all the updated forms using PartialViewContext from Java
+            if ( ! isRenderAll ) { // performance bonus: only if we aren't in @all case
+                const allForms = document.getElementsByTagName(FORM);
+
+                for (const form of allForms) {
+                    if (!formsToUpdate.has(form)
+                        && isValidForm(form)
+                        && isNull(getHiddenStateField(form, hiddenStateFieldName, context.namingContainerPrefix))) {
+                        formsToUpdate.add(form);
+                    }
+                }
+            }
+
+            // Set to Array
+            return [...formsToUpdate];
         };
 
         /**
@@ -326,7 +360,13 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
          * @ignore
          */
         const removeScripts = function removeScripts(html) {
-            return html.replace(/<script[^>]*type="text\/javascript"[^>]*>([\S\s]*?)<\/script>/igm, EMPTY);
+            return html.replace(SCRIPT_TAG_REGEX, function(match, content) {
+                const type = match.match(TAG_ATTRIBUTE_TYPE_REGEX);
+                if (!!type && type[1] !== "text/javascript") {
+                    return match; // keep non-text/javascript scripts
+                }
+                return EMPTY;
+            });
         };
 
         /**
@@ -833,7 +873,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
         const updateHiddenStateFields = function updateHiddenStateFields(updateElement, context, hiddenStateFieldName) {
             const firstChild = updateElement.firstChild;
             const state = (typeof firstChild.wholeText !== 'undefined') ? firstChild.wholeText : firstChild.nodeValue;
-            const formsToUpdate = getFormsToUpdate(context);
+            const formsToUpdate = getFormsToUpdate(context, hiddenStateFieldName);
 
             for ( const form of formsToUpdate ) {
                 let field = getHiddenStateField(form, hiddenStateFieldName, context.namingContainerPrefix);
@@ -849,9 +889,10 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
 
         /**
          * Find hidden state field for a given form.
-         * @param form The form to find hidden state field in.
-         * @param hiddenStateFieldName The hidden state field name, e.g. jakarta.faces.ViewState or jakarta.faces.ClientWindow
-         * @param namingContainerPrefix The naming container prefix, if any (the view root ID suffixed with separator character).
+         * @param form {HTMLFormElement} The form to find hidden state field in.
+         * @param hiddenStateFieldName {string} The hidden state field name, e.g. jakarta.faces.ViewState or jakarta.faces.ClientWindow
+         * @param [namingContainerPrefix] {string} The naming container prefix, if any (the view root ID suffixed with separator character).
+         * @return {HTMLInputElement} HTMLInputElement representing the hidden state field for a given form
          * @ignore
          */
         const getHiddenStateField = function getHiddenStateField(form, hiddenStateFieldName, namingContainerPrefix) {
@@ -1133,7 +1174,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
          * Ajax Request Queue
          * @ignore
          */
-        const Queue = function Queue() {
+        const Queue = new function Queue() {
 
             // Create the internal queue
             let queue = [];
@@ -1232,7 +1273,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
             req.method = null;             // GET or POST
             req.status = null;             // Response Status Code From Server
             req.fromQueue = false;         // Indicates if the request was taken off the queue before being sent. This prevents the request from entering the queue redundantly.
-            req.que = new Queue();         // the queue for requests
+            req.que = Queue;               // the shared queue for requests (singleton, per spec)
             req.xmlReq = new XMLHttpRequest(); // The real XMLHttpRequest Level2
 
             // Set up request/response state callbacks
@@ -1337,19 +1378,19 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
                     const formData = isMultiPart ? new FormData(context.form) : undefined;
 
                     // Add parameters encoded or multipart
+                    const params = new URLSearchParams(req.queryString);
                     for ( const i of Object.keys(req.parameters) ) {
                         // if is multipart request -> add parameter to FormData
                         if ( isMultiPart ) {
                             formData.append(i,req.parameters[i]);
                         }
-                        // else is a normal post request -> add encoded request query string to queryString for POST
+                        // else is a normal post request -> add to URLSearchParams for POST
                         else {
-                            if (req.queryString.length > 0) req.queryString += "&";
-                            req.queryString += encodeURIComponent(i) + "=" + encodeURIComponent(req.parameters[i]);
+                            params.append(i, req.parameters[i]);
                         }
                     }
+                    req.queryString = params.toString();
 
-                    // GET Request
                     if (req.method === "GET") {
                         if (req.queryString.length > 0) {
                             req.url += ((req.url.indexOf("?") > -1) ? "&" : "?") + req.queryString;
@@ -1360,7 +1401,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
                     req.xmlReq.open(req.method, req.url, req.async);
 
                     // note that we are including the charset=UTF-8 as part of the content type (even
-                    // if encodeURIComponent encodes as UTF-8), because with some
+                    // if URLSearchParams encodes as UTF-8), because with some
                     // browsers it will not be set in the request.  Some server implementations need to
                     // determine the character encoding from the request header content type.
                     if (req.method === "POST") {
@@ -2058,7 +2099,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
                 }
 
                 // encoded query string to process, eventually with partial submit logic enabled
-                const viewState = doPartialSubmit ? faces.getPartialViewState( form , options.execute ) : faces.getViewState(form);
+                const viewState = doPartialSubmit ? getPartialViewState( form , options.execute ) : faces.getViewState(form);
 
                 // copy all params to args
                 const params = options.params || {};
@@ -2478,26 +2519,20 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
     };
 
     /**
-     * <p>Collect and encode state for input controls associated
-     * with the specified <code>form</code> element.  This will include
-     * all input controls of type <code>hidden</code>.</p>
-     * <p><b>Usage:</b></p>
-     * <pre><code>
-     * var state = faces.getViewState(form);
-     * </pre></code>
+     * Collect and encode state for only those input controls within the
+     * specified form that belong to the execute component set (partial submit).
+     * ViewState and ClientWindow parameters are always included.
+     * Unlike faces.getViewState which serializes all form controls, this
+     * function limits serialization to controls that are children of or
+     * named by the execute IDs.
      *
-     * @param form The <code>form</code> element whose contained
-     * <code>input</code> controls will be collected and encoded.
-     * Only successful controls will be collected and encoded in
-     * accordance with: <a href="http://www.w3.org/TR/html401/interact/forms.html#h-17.13.2">
-     * Section 17.13.2 of the HTML Specification</a>.
-     *
-     * @param execute The option.execute string built inside faces.ajax.request
-     *
-     * @returns String The encoded state for the specified form's input controls.
+     * @param form The form element whose controls will be selectively encoded.
+     * @param execute Space-separated string of component IDs to include.
+     * @returns String The encoded state for the matching input controls.
+     * @ignore
      */
-    faces.getPartialViewState = function(form, execute) {
-        if (!form) throw new Error("faces.getPartialViewState:  form must be set");
+    const getPartialViewState = function(form, execute) {
+        if (!form) throw new Error("getPartialViewState:  form must be set");
 
         // if execute is defined, create an array of id
         // that have to be included in the query string
@@ -2506,22 +2541,21 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
         // array of element id => array of existing dom element
         const partialExecuteDomElements = partialExecuteIds.map(getElemById).filter( elem => !!elem );
 
-        // the query string
-        let qString = EMPTY;
+        const params = new URLSearchParams();
 
         // if the partialExecuteIds does not include the form.id,
         // then add it because it's required by the spec to be always included!
         if ( partialExecuteIds && !partialExecuteIds.includes(form.id) ) {
-            qString = appendToQueryString(qString,form.id,form.id);
+            params.append(form.id, form.id);
         }
 
-        // add encoded name=value string to query string parts array.
+        // add name=value to params.
         // If partialExecuteIds is defined
         // then add the field only if there is a child element with his name
         // inside one of the element identified with the id contained in "partialExecuteIds" array (partial submit)
         const addField = function(name, value) {
             const add = !partialExecuteIds || partialExecuteIds.includes(name) || containsNamedChild(partialExecuteDomElements,name);
-            if (add) qString = appendToQueryString(qString,name,value);
+            if (add) params.append(name, value);
         };
 
         const els = form.elements;
@@ -2567,7 +2601,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
             }
         }
 
-        return qString;
+        return params.toString();
     }
 
 
@@ -2593,13 +2627,9 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
     faces.getViewState = function(form) {
         if (!form) throw new Error("faces.getViewState:  form must be set");
 
-        // the query string
-        let qString = EMPTY;
-
-        // add encoded name=value string to query string parts array.
-        // If partialExecuteIds is defined then add the field only if the name is inside the "partialExecuteIds" array (partial submit)
+        const params = new URLSearchParams();
         const addField = function(name, value) {
-            qString += ( (qString.length > 0 ? "&" : EMPTY) + encodeURIComponent(name) + "=" + encodeURIComponent(value) );
+            params.append(name, value);
         };
 
         const els = form.elements;
@@ -2644,7 +2674,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
                 }
             }
         }
-        return qString;
+        return params.toString();
     };
 
     /**
@@ -2670,7 +2700,9 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
          * @ignore
          */
         const getWindowIdElement = function(form) {
-            return getFormInputElementByName(form,CLIENT_WINDOW_PARAM);
+            // Try exact name first, then fall back to namespaced name (e.g. "viewId:jakarta.faces.ClientWindow" in portlet environments)
+            return getFormInputElementByName(form, CLIENT_WINDOW_PARAM)
+                || form.querySelector("input[name$='" + faces.separatorchar + CLIENT_WINDOW_PARAM + "']");
         };
 
         const fetchWindowIdFromForms = function(forms) {
@@ -2848,9 +2880,9 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
          * same push notification from the server.
          * @param {string} channel The channel name of the websocket.
          * @param {function} onopen The JavaScript event handler function that is invoked when the websocket is opened.
-         * The function will be invoked with one argument: the client identifier.
+         * The function will be invoked with one argument: the channel name.
          * @param {function} onmessage The JavaScript event handler function that is invoked when a message is received from
-         * the server. The function will be invoked with three arguments: the push message, the client identifier and
+         * the server. The function will be invoked with three arguments: the push message, the channel name and
          * the raw <code>MessageEvent</code> itself.
          * @param {function} onerror The JavaScript event handler function that is invoked when a connection error has
          * occurred and the web socket will attempt to reconnect. The function will be invoked with three arguments: the
@@ -2871,6 +2903,11 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
          */
         self.init = function(clientId, url, channel, onopen, onmessage, onerror, onclose, behaviors, autoconnect) {
             onclose = resolveFunction(onclose);
+
+            if (!window.WebSocket) {
+                onclose(-1, clientId);
+                return;
+            }
 
             if (!sockets[clientId]) {
                 sockets[clientId] = new ReconnectingWebsocket(url, channel, resolveFunction(onopen), resolveFunction(onmessage), resolveFunction(onerror), onclose, behaviors);
@@ -3024,7 +3061,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
      * <code>faces.specversion</code>
      * This number is implementation dependent.</p>
      */
-    faces.implversion = 5;
+    faces.implversion = 0;
 
 
 } //end if version detection block

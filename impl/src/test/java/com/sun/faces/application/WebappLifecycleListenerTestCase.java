@@ -12,6 +12,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import com.sun.faces.config.InitFacesContext;
 import com.sun.faces.config.WebConfiguration;
 import com.sun.faces.junit.JUnitFacesTestCaseBase;
 import com.sun.faces.mock.MockHttpServletRequest;
@@ -31,7 +32,11 @@ public class WebappLifecycleListenerTestCase extends JUnitFacesTestCaseBase {
             FacesContext.getCurrentInstance().release();
         }
 
-        // To release ServletContextFacesContextFactory, which also keeps reference to InitFacesContext instance.
+        // If an InitFacesContext became visible after releasing the MockFacesContext, clear it too.
+        if (FacesContext.getCurrentInstance() instanceof InitFacesContext) {
+            ((InitFacesContext) FacesContext.getCurrentInstance()).releaseCurrentInstance();
+        }
+
         FactoryFinder.releaseFactories();
     }
     /**

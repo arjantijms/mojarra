@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Contributors to Eclipse Foundation.
+ * Copyright (c) 2023, 2026 Contributors to Eclipse Foundation.
  * Copyright (c) 1997, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -274,6 +274,11 @@ public class MockBeanManager implements BeanManager, ELAwareBeanManager {
     @Override
     public boolean isMatchingEvent(Type specifiedType, Set<Annotation> specifiedQualifiers, Type observedEventType, Set<Annotation> observedEventQualifiers) {
         return false;
+    }
+
+    @Override
+    public <T> T unwrapClientProxy(T reference) {
+        return null;
     }
 
 }

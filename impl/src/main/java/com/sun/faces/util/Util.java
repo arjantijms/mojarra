@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Contributors to Eclipse Foundation.
+ * Copyright (c) 2021, 2026 Contributors to Eclipse Foundation.
  * Copyright (c) 1997, 2021 Oracle and/or its affiliates. All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -402,7 +402,7 @@ public class Util {
 
     public static <T> T newInstance(Class<T> clazz) {
         try {
-            return (T) clazz.getDeclaredConstructor().newInstance();
+            return clazz.getDeclaredConstructor().newInstance();
         } catch (IllegalArgumentException | ReflectiveOperationException | SecurityException e) {
             throw new IllegalStateException(e.getMessage(), e);
         }
@@ -812,7 +812,7 @@ public class Util {
         else if (type.indexOf('.') == -1) {
             type = "java.lang." + type;
         }
-        
+
         Class<?> result = loadClass(type, Void.TYPE);
         return result;
     }
@@ -1519,7 +1519,7 @@ public class Util {
             return elAwareBeanManager;
         }
 
-        return new ELAwareBeanManagerWrapper(beanManager);
+        return null;
     }
 
     @SuppressWarnings("unchecked")
