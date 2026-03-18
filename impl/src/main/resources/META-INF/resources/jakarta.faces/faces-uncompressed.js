@@ -2,7 +2,6 @@
  * Copyright (c) 1997, 2020 Oracle and/or its affiliates. All rights reserved.
  * Copyright 2004 The Apache Software Foundation
  * Copyright 2004-2008 Emmanouil Batsis, mailto: mbatsis at users full stop sourceforge full stop net
- * Copyright 2004-2008 Emmanouil Batsis, mailto: mbatsis at users full stop sourceforge full stop net
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +18,13 @@
 
 /**
  @project Faces JavaScript Library
- @version 4.0
+ @version 4.0.15
  @description This is the standard implementation of the Faces JavaScript Library.
  */
 
 // Detect if this is already loaded, and if loaded, if it's a higher version
 if (!((faces && faces.specversion && faces.specversion >= 40000 ) &&
-      (faces.implversion && faces.implversion >= 4))) {
+      (faces.implversion && faces.implversion >= 15))) {
 
     /**
      * <span class="changed_modified_2_2">The top level global namespace
@@ -3577,7 +3576,7 @@ if (!((faces && faces.specversion && faces.specversion >= 40000 ) &&
      * <code>faces.specversion</code>
      * This number is implementation dependent.</p>
      */
-    faces.implversion = 4;
+    faces.implversion = 15;
 
 
 } //end if version detection block
