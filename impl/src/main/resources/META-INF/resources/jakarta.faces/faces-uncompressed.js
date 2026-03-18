@@ -2888,9 +2888,9 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
          * same push notification from the server.
          * @param {string} channel The channel name of the websocket.
          * @param {function} onopen The JavaScript event handler function that is invoked when the websocket is opened.
-         * The function will be invoked with one argument: the client identifier.
+         * The function will be invoked with one argument: the channel name.
          * @param {function} onmessage The JavaScript event handler function that is invoked when a message is received from
-         * the server. The function will be invoked with three arguments: the push message, the client identifier and
+         * the server. The function will be invoked with three arguments: the push message, the channel name and
          * the raw <code>MessageEvent</code> itself.
          * @param {function} onerror The JavaScript event handler function that is invoked when a connection error has
          * occurred and the web socket will attempt to reconnect. The function will be invoked with three arguments: the
