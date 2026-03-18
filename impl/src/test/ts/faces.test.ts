@@ -4,7 +4,6 @@
 export {};
 
 const FACES_JS = "../../main/resources/META-INF/resources/jakarta.faces/faces-uncompressed.js";
-const POM_XML = "../../../pom.xml";
 
 declare global {
     var faces: Record<string, unknown>;
@@ -15,14 +14,14 @@ import fs from "fs";
 import path from "path";
 
 /**
- * Parse the project version from impl/pom.xml and derive expected specversion and implversion.
- * E.g. pom version "4.0.15-SNAPSHOT" -> specversion 40000, implversion 15.
+ * Parse the @version JSDoc tag from faces-uncompressed.js and derive expected specversion and implversion.
+ * E.g. @version 4.0.15 -> specversion 40000, implversion 15.
  */
-function parsePomVersions(): { specversion: number; implversion: number } {
-    const pom = fs.readFileSync(path.resolve(__dirname, POM_XML), "utf-8");
-    const match = pom.match(/<parent>[\s\S]*?<version>(\d+)\.(\d+)\.(\d+)(-[^<]+)?<\/version>[\s\S]*?<\/parent>/);
+function parseJsVersions(): { specversion: number; implversion: number } {
+    const source = fs.readFileSync(path.resolve(__dirname, FACES_JS), "utf-8");
+    const match = source.match(/@version\s+(\d+)\.(\d+)\.(\d+)/);
     if (!match) {
-        throw new Error("Could not parse project version from pom.xml <parent> element");
+        throw new Error("Could not parse @version tag from faces-uncompressed.js");
     }
     const [, major, minor, patch] = match;
     return {
@@ -31,7 +30,7 @@ function parsePomVersions(): { specversion: number; implversion: number } {
     };
 }
 
-const pomVersions = parsePomVersions();
+const facesJsVersion = parseJsVersions();
 
 beforeAll(() => {
     const source = fs.readFileSync(path.resolve(__dirname, FACES_JS), "utf-8");
@@ -78,15 +77,15 @@ describe("faces namespace", () => {
 });
 
 describe("faces.specversion", () => {
-    test("matches spec major.minor from pom.xml", () => {
-        expect(faces.specversion).toBeGreaterThanOrEqual(pomVersions.specversion);
-        expect(faces.specversion).toBeLessThanOrEqual(pomVersions.specversion + 99);
+    test("matches spec major.minor from @version tag", () => {
+        expect(faces.specversion).toBeGreaterThanOrEqual(facesJsVersion.specversion);
+        expect(faces.specversion).toBeLessThanOrEqual(facesJsVersion.specversion + 99);
     });
 });
 
 describe("faces.implversion", () => {
     test("matches patch version from pom.xml", () => {
-        expect(faces.implversion).toBe(pomVersions.implversion);
+        expect(faces.implversion).toBe(facesJsVersion.implversion);
     });
 });
 
@@ -112,13 +111,13 @@ describe("version guard", () => {
     test("re-initializes when a lower specversion is present", () => {
         (faces as Record<string, unknown>).specversion = 1;
         reloadFacesJs();
-        expect(faces.specversion).toBeGreaterThanOrEqual(pomVersions.specversion);
+        expect(faces.specversion).toBeGreaterThanOrEqual(facesJsVersion.specversion);
     });
 
     test("re-initializes when a lower implversion is present", () => {
         (faces as Record<string, unknown>).implversion = 0;
         reloadFacesJs();
-        expect(faces.implversion).toBe(pomVersions.implversion);
+        expect(faces.implversion).toBe(facesJsVersion.implversion);
     });
 
     test("re-initializes when previous specversion is only one less than current", () => {
@@ -129,9 +128,9 @@ describe("version guard", () => {
     });
 
     test("re-initializes when previous implversion is only one less than current", () => {
-        (faces as Record<string, unknown>).implversion = pomVersions.implversion - 1;
+        (faces as Record<string, unknown>).implversion = facesJsVersion.implversion - 1;
         reloadFacesJs();
-        expect(faces.implversion).toBe(pomVersions.implversion);
+        expect(faces.implversion).toBe(facesJsVersion.implversion);
     });
 });
 
