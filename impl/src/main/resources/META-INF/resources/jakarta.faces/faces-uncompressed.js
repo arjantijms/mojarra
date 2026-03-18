@@ -18,13 +18,13 @@
 
 /**
  @project Faces JavaScript Library
- @version 5.0
+ @version 5.0.0
  @description This is the standard implementation of the Faces JavaScript Library.
  */
 
 // Detect if this is already loaded, and if loaded, if it's a higher version
 if ( !( (window.faces && window.faces.specversion && window.faces.specversion >= 50000 )
-    && (window.faces.implversion && window.faces.implversion >= 5)) ) {
+    && (window.faces.implversion && window.faces.implversion >= 0)) ) {
 
     // --- JS Lang --------------------------------------------------------------------
     const UDEF = 'undefined';
@@ -1177,7 +1177,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
          * Ajax Request Queue
          * @ignore
          */
-        const Queue = function Queue() {
+        const Queue = new function Queue() {
 
             // Create the internal queue
             let queue = [];
@@ -1276,7 +1276,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
             req.method = null;             // GET or POST
             req.status = null;             // Response Status Code From Server
             req.fromQueue = false;         // Indicates if the request was taken off the queue before being sent. This prevents the request from entering the queue redundantly.
-            req.que = new Queue();         // the queue for requests
+            req.que = Queue;               // the shared queue for requests (singleton, per spec)
             req.xmlReq = new XMLHttpRequest(); // The real XMLHttpRequest Level2
 
             // Set up request/response state callbacks
@@ -2102,7 +2102,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
                 }
 
                 // encoded query string to process, eventually with partial submit logic enabled
-                const viewState = doPartialSubmit ? faces.getPartialViewState( form , options.execute ) : faces.getViewState(form);
+                const viewState = doPartialSubmit ? getPartialViewState( form , options.execute ) : faces.getViewState(form);
 
                 // copy all params to args
                 const params = options.params || {};
@@ -2522,26 +2522,20 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
     };
 
     /**
-     * <p>Collect and encode state for input controls associated
-     * with the specified <code>form</code> element.  This will include
-     * all input controls of type <code>hidden</code>.</p>
-     * <p><b>Usage:</b></p>
-     * <pre><code>
-     * var state = faces.getViewState(form);
-     * </pre></code>
+     * Collect and encode state for only those input controls within the
+     * specified form that belong to the execute component set (partial submit).
+     * ViewState and ClientWindow parameters are always included.
+     * Unlike faces.getViewState which serializes all form controls, this
+     * function limits serialization to controls that are children of or
+     * named by the execute IDs.
      *
-     * @param form The <code>form</code> element whose contained
-     * <code>input</code> controls will be collected and encoded.
-     * Only successful controls will be collected and encoded in
-     * accordance with: <a href="http://www.w3.org/TR/html401/interact/forms.html#h-17.13.2">
-     * Section 17.13.2 of the HTML Specification</a>.
-     *
-     * @param execute The option.execute string built inside faces.ajax.request
-     *
-     * @returns String The encoded state for the specified form's input controls.
+     * @param form The form element whose controls will be selectively encoded.
+     * @param execute Space-separated string of component IDs to include.
+     * @returns String The encoded state for the matching input controls.
+     * @ignore
      */
-    faces.getPartialViewState = function(form, execute) {
-        if (!form) throw new Error("faces.getPartialViewState:  form must be set");
+    const getPartialViewState = function(form, execute) {
+        if (!form) throw new Error("getPartialViewState:  form must be set");
 
         // if execute is defined, create an array of id
         // that have to be included in the query string
@@ -2714,7 +2708,9 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
          * @ignore
          */
         const getWindowIdElement = function(form) {
-            return getFormInputElementByName(form,CLIENT_WINDOW_PARAM);
+            // Try exact name first, then fall back to namespaced name (e.g. "viewId:jakarta.faces.ClientWindow" in portlet environments)
+            return getFormInputElementByName(form, CLIENT_WINDOW_PARAM)
+                || form.querySelector("input[name$='" + faces.separatorchar + CLIENT_WINDOW_PARAM + "']");
         };
 
         const fetchWindowIdFromForms = function(forms) {
@@ -2916,6 +2912,11 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
         self.init = function(clientId, url, channel, onopen, onmessage, onerror, onclose, behaviors, autoconnect) {
             onclose = resolveFunction(onclose);
 
+            if (!window.WebSocket) {
+                onclose(-1, clientId);
+                return;
+            }
+
             if (!sockets[clientId]) {
                 sockets[clientId] = new ReconnectingWebsocket(url, channel, resolveFunction(onopen), resolveFunction(onmessage), resolveFunction(onerror), onclose, behaviors);
             }
@@ -3068,7 +3069,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
      * <code>faces.specversion</code>
      * This number is implementation dependent.</p>
      */
-    faces.implversion = 5;
+    faces.implversion = 0;
 
 
 } //end if version detection block
