@@ -2063,7 +2063,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
                 }
 
                 // encoded query string to process, eventually with partial submit logic enabled
-                const viewState = doPartialSubmit ? faces.getPartialViewState( form , options.execute ) : faces.getViewState(form);
+                const viewState = doPartialSubmit ? getPartialViewState( form , options.execute ) : faces.getViewState(form);
 
                 // copy all params to args
                 const params = options.params || {};
@@ -2483,26 +2483,20 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
     };
 
     /**
-     * <p>Collect and encode state for input controls associated
-     * with the specified <code>form</code> element.  This will include
-     * all input controls of type <code>hidden</code>.</p>
-     * <p><b>Usage:</b></p>
-     * <pre><code>
-     * var state = faces.getViewState(form);
-     * </pre></code>
+     * Collect and encode state for only those input controls within the
+     * specified form that belong to the execute component set (partial submit).
+     * ViewState and ClientWindow parameters are always included.
+     * Unlike faces.getViewState which serializes all form controls, this
+     * function limits serialization to controls that are children of or
+     * named by the execute IDs.
      *
-     * @param form The <code>form</code> element whose contained
-     * <code>input</code> controls will be collected and encoded.
-     * Only successful controls will be collected and encoded in
-     * accordance with: <a href="http://www.w3.org/TR/html401/interact/forms.html#h-17.13.2">
-     * Section 17.13.2 of the HTML Specification</a>.
-     *
-     * @param execute The option.execute string built inside faces.ajax.request
-     *
-     * @returns String The encoded state for the specified form's input controls.
+     * @param form The form element whose controls will be selectively encoded.
+     * @param execute Space-separated string of component IDs to include.
+     * @returns String The encoded state for the matching input controls.
+     * @ignore
      */
-    faces.getPartialViewState = function(form, execute) {
-        if (!form) throw new Error("faces.getPartialViewState:  form must be set");
+    const getPartialViewState = function(form, execute) {
+        if (!form) throw new Error("getPartialViewState:  form must be set");
 
         // if execute is defined, create an array of id
         // that have to be included in the query string
