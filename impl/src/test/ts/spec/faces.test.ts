@@ -1,50 +1,12 @@
 /**
  * Tests for the top-level `faces` namespace exposed by faces.js.
  */
-export {};
 
-const FACES_JS_UNCOMPRESSED = "../../main/resources/META-INF/resources/jakarta.faces/faces-uncompressed.js";
-const FACES_JS = "../../../target/generated-resources/yui/META-INF/resources/jakarta.faces/faces.js";
+import { parseFacesJsVersion, loadFacesJs } from "../test-setup";
 
-declare global {
-    var faces: Record<string, unknown>;
-    var mojarra: Record<string, unknown>;
-}
+const facesJsVersion = parseFacesJsVersion();
 
-import fs from "fs";
-import path from "path";
-
-/**
- * Parse the @version JSDoc tag from faces-uncompressed.js and derive expected specversion and implversion.
- * E.g. @version 4.0.15 -> specversion 40000, implversion 15.
- */
-function parseJsVersions(): { specversion: number; implversion: number } {
-    const source = fs.readFileSync(path.resolve(__dirname, FACES_JS_UNCOMPRESSED), "utf-8");
-    const match = source.match(/@version\s+(\d+)\.(\d+)\.(\d+)/);
-    if (!match) {
-        throw new Error("Could not parse @version tag from faces-uncompressed.js");
-    }
-    const [, major, minor, patch] = match;
-    return {
-        specversion: parseInt(major) * 10000 + parseInt(minor) * 100,
-        implversion: parseInt(patch),
-    };
-}
-
-const facesJsVersion = parseJsVersions();
-
-beforeAll(() => {
-    const source = fs.readFileSync(path.resolve(__dirname, FACES_JS), "utf-8");
-
-    // Replace EL expressions with test values.
-    const evaluated = source
-        .replace("#{facesContext.namingContainerSeparatorChar}", ":")
-        .replace("#{facesContext.externalContext.requestContextPath}", "/test");
-
-    const script = document.createElement("script");
-    script.textContent = evaluated;
-    document.head.appendChild(script);
-});
+beforeAll(() => loadFacesJs());
 
 describe("faces namespace", () => {
 
@@ -91,46 +53,37 @@ describe("faces.implversion", () => {
 });
 
 describe("version guard", () => {
-    function reloadFacesJs(): void {
-        const source = fs.readFileSync(path.resolve(__dirname, FACES_JS), "utf-8");
-        const evaluated = source
-            .replace("#{facesContext.namingContainerSeparatorChar}", ":")
-            .replace("#{facesContext.externalContext.requestContextPath}", "/test");
-        const script = document.createElement("script");
-        script.textContent = evaluated;
-        document.head.appendChild(script);
-    }
 
     test("skips re-initialization when same version is already loaded", () => {
         const origSpec = faces.specversion;
         const origImpl = faces.implversion;
-        reloadFacesJs();
+        loadFacesJs();
         expect(faces.specversion).toBe(origSpec);
         expect(faces.implversion).toBe(origImpl);
     });
 
     test("re-initializes when a lower specversion is present", () => {
         (faces as Record<string, unknown>).specversion = 1;
-        reloadFacesJs();
+        loadFacesJs();
         expect(faces.specversion).toBeGreaterThanOrEqual(facesJsVersion.specversion);
     });
 
     test("re-initializes when a lower implversion is present", () => {
         (faces as Record<string, unknown>).implversion = 0;
-        reloadFacesJs();
+        loadFacesJs();
         expect(faces.implversion).toBe(facesJsVersion.implversion);
     });
 
     test("re-initializes when previous specversion is only one less than current", () => {
         const original = faces.specversion as number;
         (faces as Record<string, unknown>).specversion = original - 1;
-        reloadFacesJs();
+        loadFacesJs();
         expect(faces.specversion).toBe(original);
     });
 
     test("re-initializes when previous implversion is only one less than current", () => {
         (faces as Record<string, unknown>).implversion = facesJsVersion.implversion - 1;
-        reloadFacesJs();
+        loadFacesJs();
         expect(faces.implversion).toBe(facesJsVersion.implversion);
     });
 });
