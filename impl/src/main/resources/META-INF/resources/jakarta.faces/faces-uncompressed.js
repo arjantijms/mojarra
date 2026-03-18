@@ -1138,7 +1138,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
          * Ajax Request Queue
          * @ignore
          */
-        const Queue = function Queue() {
+        const Queue = new function Queue() {
 
             // Create the internal queue
             let queue = [];
@@ -1237,7 +1237,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
             req.method = null;             // GET or POST
             req.status = null;             // Response Status Code From Server
             req.fromQueue = false;         // Indicates if the request was taken off the queue before being sent. This prevents the request from entering the queue redundantly.
-            req.que = new Queue();         // the queue for requests
+            req.que = Queue;               // the shared queue for requests (singleton, per spec)
             req.xmlReq = new XMLHttpRequest(); // The real XMLHttpRequest Level2
 
             // Set up request/response state callbacks
