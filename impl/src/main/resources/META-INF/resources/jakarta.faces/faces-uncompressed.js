@@ -2873,6 +2873,11 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
         self.init = function(clientId, url, channel, onopen, onmessage, onerror, onclose, behaviors, autoconnect) {
             onclose = resolveFunction(onclose);
 
+            if (!window.WebSocket) {
+                onclose(-1, clientId);
+                return;
+            }
+
             if (!sockets[clientId]) {
                 sockets[clientId] = new ReconnectingWebsocket(url, channel, resolveFunction(onopen), resolveFunction(onmessage), resolveFunction(onerror), onclose, behaviors);
             }
