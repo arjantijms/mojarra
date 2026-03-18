@@ -3,128 +3,7 @@
  */
 
 import { loadFacesJs } from "../test-setup";
-
-// ---- Mock XMLHttpRequest ----
-
-interface MockXHRInstance {
-    method: string | null;
-    url: string | null;
-    async: boolean;
-    requestHeaders: Record<string, string>;
-    body: string | null;
-    readyState: number;
-    status: number;
-    responseText: string;
-    responseXML: Document | null;
-    onreadystatechange: ((this: XMLHttpRequest, ev: Event) => void) | null;
-    open(method: string, url: string, async?: boolean): void;
-    setRequestHeader(name: string, value: string): void;
-    send(body?: string | null): void;
-    /** Test helper: simulate server response. */
-    respond(status: number, responseText: string, responseXML?: string): void;
-}
-
-let xhrInstances: MockXHRInstance[];
-let OriginalXHR: typeof XMLHttpRequest;
-
-function installMockXHR(): void {
-    xhrInstances = [];
-    OriginalXHR = window.XMLHttpRequest;
-
-    (window as unknown as Record<string, unknown>).XMLHttpRequest = function MockXHR(this: MockXHRInstance) {
-        this.method = null;
-        this.url = null;
-        this.async = true;
-        this.requestHeaders = {};
-        this.body = null;
-        this.readyState = 0;
-        this.status = 0;
-        this.responseText = "";
-        this.responseXML = null;
-        this.onreadystatechange = null;
-
-        this.open = function (method: string, url: string, async = true) {
-            this.method = method;
-            this.url = url;
-            this.async = async;
-            this.readyState = 1;
-        };
-
-        this.setRequestHeader = function (name: string, value: string) {
-            this.requestHeaders[name] = value;
-        };
-
-        this.send = function (body?: string | null) {
-            this.body = body ?? null;
-        };
-
-        this.respond = function (status: number, responseText: string, responseXML?: string) {
-            this.status = status;
-            this.responseText = responseText;
-            if (responseXML) {
-                this.responseXML = new DOMParser().parseFromString(responseXML, "application/xml");
-            }
-            this.readyState = 4;
-            if (this.onreadystatechange) {
-                this.onreadystatechange.call(this as unknown as XMLHttpRequest, new Event("readystatechange"));
-            }
-        };
-
-        xhrInstances.push(this);
-    } as unknown as typeof XMLHttpRequest;
-}
-
-function drainXHRQueue(): void {
-    // Complete any pending XHRs so the internal queue is drained for the next test.
-    for (const xhr of xhrInstances) {
-        if (xhr.readyState !== 4) {
-            xhr.status = 200;
-            xhr.responseText = "";
-            xhr.responseXML = new DOMParser().parseFromString(
-                '<?xml version="1.0" encoding="UTF-8"?><partial-response id="j_id1"><changes></changes></partial-response>',
-                "application/xml"
-            );
-            xhr.readyState = 4;
-            if (xhr.onreadystatechange) {
-                xhr.onreadystatechange.call(xhr as unknown as XMLHttpRequest, new Event("readystatechange"));
-            }
-        }
-    }
-}
-
-function uninstallMockXHR(): void {
-    drainXHRQueue();
-    window.XMLHttpRequest = OriginalXHR;
-}
-
-function lastXHR(): MockXHRInstance {
-    return xhrInstances[xhrInstances.length - 1];
-}
-
-// ---- DOM helpers ----
-
-function createAjaxForm(formId = "testForm", buttonId = "testButton"): { form: HTMLFormElement; button: HTMLButtonElement } {
-    const form = document.createElement("form");
-    form.id = formId;
-    form.method = "post";
-    form.action = "/test/action";
-
-    const viewState = Object.assign(document.createElement("input"), {
-        type: "hidden",
-        name: "jakarta.faces.ViewState",
-        value: "testViewState123",
-    });
-    form.appendChild(viewState);
-
-    const button = document.createElement("button");
-    button.type = "button";
-    button.id = buttonId;
-    button.name = buttonId;
-    form.appendChild(button);
-
-    document.body.appendChild(form);
-    return { form, button };
-}
+import { installMockXHR, uninstallMockXHR, lastXHR, getXHRInstances, createAjaxForm } from "../test-helpers";
 
 // ---- Test setup ----
 
@@ -662,26 +541,26 @@ describe("faces.ajax.request: delay option", () => {
 
     test("delay='none' sends immediately", () => {
         ajax().request(button, null, { delay: "none" });
-        expect(xhrInstances.length).toBe(1);
+        expect(getXHRInstances().length).toBe(1);
     });
 
     test("no delay sends immediately", () => {
         ajax().request(button, null);
-        expect(xhrInstances.length).toBe(1);
+        expect(getXHRInstances().length).toBe(1);
     });
 
     test("numeric delay defers the request", () => {
         ajax().request(button, null, { delay: 500 });
-        expect(xhrInstances.length).toBe(0);
+        expect(getXHRInstances().length).toBe(0);
         jest.advanceTimersByTime(500);
-        expect(xhrInstances.length).toBe(1);
+        expect(getXHRInstances().length).toBe(1);
     });
 
     test("string numeric delay defers the request", () => {
         ajax().request(button, null, { delay: "300" });
-        expect(xhrInstances.length).toBe(0);
+        expect(getXHRInstances().length).toBe(0);
         jest.advanceTimersByTime(300);
-        expect(xhrInstances.length).toBe(1);
+        expect(getXHRInstances().length).toBe(1);
     });
 
     test("subsequent request within delay cancels previous", () => {
@@ -689,7 +568,7 @@ describe("faces.ajax.request: delay option", () => {
         jest.advanceTimersByTime(200);
         ajax().request(button, null, { delay: 500 });
         jest.advanceTimersByTime(500);
-        expect(xhrInstances.length).toBe(1);
+        expect(getXHRInstances().length).toBe(1);
     });
 });
 
@@ -1426,11 +1305,11 @@ describe("faces.ajax.request: queue behavior", () => {
     test("second request is queued until first completes", () => {
         ajax().request(button, null);
         const firstXHR = lastXHR();
-        expect(xhrInstances.length).toBe(1);
+        expect(getXHRInstances().length).toBe(1);
 
         ajax().request(button, null);
         // Second request creates an XHR object but doesn't call send until first completes
-        const secondXHR = xhrInstances.length > 1 ? xhrInstances[1] : null;
+        const secondXHR = getXHRInstances().length > 1 ? getXHRInstances()[1] : null;
         if (secondXHR) {
             // If XHR was created, it should not have been sent yet (readyState 0 or 1, but not sent)
             expect(secondXHR.body).toBeNull();
@@ -1441,7 +1320,7 @@ describe("faces.ajax.request: queue behavior", () => {
             '<?xml version="1.0" encoding="UTF-8"?><partial-response id=""><changes></changes></partial-response>');
 
         // After first completes, second should now be sent
-        const sent = xhrInstances.filter(x => x.body !== null);
+        const sent = getXHRInstances().filter(x => x.body !== null);
         expect(sent.length).toBeGreaterThanOrEqual(2);
     });
 
@@ -1456,7 +1335,7 @@ describe("faces.ajax.request: queue behavior", () => {
         expect(events1.map(e => e.status)).toContain("begin");
 
         // Complete first request to let second proceed
-        xhrInstances[0].respond(200, "",
+        getXHRInstances()[0].respond(200, "",
             '<?xml version="1.0" encoding="UTF-8"?><partial-response id=""><changes></changes></partial-response>');
 
         // Second request should now have gotten begin
