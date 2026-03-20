@@ -400,14 +400,22 @@ public class ResourceHandlerImpl extends ResourceHandler {
     @Override
     public String getCurrentNonce(FacesContext context) {
         if (cspEnabled) {
-            var viewMap = context.getViewRoot().getViewMap(true);
-            var nonce = (String) viewMap.get(CURRENT_NONCE);
+            var requestMap = context.getAttributes();
+            var nonce = (String) requestMap.get(CURRENT_NONCE);
 
             if (nonce == null) {
-                byte[] bytes = new byte[32];
-                secureRandom.nextBytes(bytes);
-                nonce = Base64.getEncoder().encodeToString(bytes);
-                viewMap.put(CURRENT_NONCE, nonce);
+                if (context.getPartialViewContext().isPartialRequest()) {
+                    nonce = (String) context.getViewRoot().getViewMap(true).get(CURRENT_NONCE);
+                }
+
+                if (nonce == null) {
+                    byte[] bytes = new byte[32];
+                    secureRandom.nextBytes(bytes);
+                    nonce = Base64.getEncoder().encodeToString(bytes);
+                }
+
+                requestMap.put(CURRENT_NONCE, nonce);
+                context.getViewRoot().getViewMap(true).put(CURRENT_NONCE, nonce);
             }
 
             return nonce;
