@@ -37,11 +37,11 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.security.SecureRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -404,8 +404,10 @@ public class ResourceHandlerImpl extends ResourceHandler {
             var nonce = (String) requestMap.get(CURRENT_NONCE);
 
             if (nonce == null) {
+                var viewMap = context.getViewRoot().getViewMap(true);
+
                 if (context.getPartialViewContext().isPartialRequest()) {
-                    nonce = (String) context.getViewRoot().getViewMap(true).get(CURRENT_NONCE);
+                    nonce = (String) viewMap.get(CURRENT_NONCE);
                 }
 
                 if (nonce == null) {
@@ -415,7 +417,7 @@ public class ResourceHandlerImpl extends ResourceHandler {
                 }
 
                 requestMap.put(CURRENT_NONCE, nonce);
-                context.getViewRoot().getViewMap(true).put(CURRENT_NONCE, nonce);
+                viewMap.put(CURRENT_NONCE, nonce);
             }
 
             return nonce;
