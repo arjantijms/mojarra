@@ -1465,12 +1465,32 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
                 sent = true;
             }
 
-            if (!sent && faces.getProjectStage() === "Development") {
-                if (status === "serverError") {
-                    alert("serverError: " + serverErrorName + SPACE + serverErrorMessage);
+            if (!sent) {
+                const errorMessage = status + ": "
+                    + (serverErrorName ? serverErrorName + " " : "")
+                    + data.description
+                    + (data.responseCode ? " (HTTP " + data.responseCode + ")" : "")
+                    + (data.source ? " [source: " + (data.source.id || data.source) + "]" : "");
+
+                // Example outputs:
+                // - httpError: There was an error communicating with the server, status: 404 (HTTP 404) [source: myButton]
+                // - serverError: java.lang.NullPointerException fieldName (HTTP 500) [source: myForm]
+                // - emptyResponse: An empty response was received from the server. Check server error logs. [source: myButton]
+
+                if (faces.getProjectStage() === "Development") {
+                    alert(errorMessage);
                 } else {
-                    alert(status + ": " + data.description);
+                    console.error(errorMessage);
                 }
+
+                const warnMessage = "No faces.ajax.addOnError handler registered to handle this error. Register one to customize error handling.";
+
+                if (window.onerror) {
+                    const onerrorMessage = errorMessage + " WARNING: " + warnMessage;
+                    window.onerror(onerrorMessage, "jakarta.faces:faces.js", 0, 0, new Error(onerrorMessage));
+                }
+
+                console.warn(warnMessage);
             }
         };
 
