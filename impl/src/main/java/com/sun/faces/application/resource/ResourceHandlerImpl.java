@@ -226,6 +226,10 @@ public class ResourceHandlerImpl extends ResourceHandler {
 
     @Override
     public String getRendererTypeForResourceName(String resourceName) {
+        if (resourceName == null) {
+            return null;
+        }
+
         String resourceType = getResourceType(getContentType(FacesContext.getCurrentInstance(), resourceName));
 
         return switch (resourceType) {
