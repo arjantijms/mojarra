@@ -37,11 +37,11 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.security.SecureRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -400,13 +400,23 @@ public class ResourceHandlerImpl extends ResourceHandler {
     @Override
     public String getCurrentNonce(FacesContext context) {
         if (cspEnabled) {
-            var viewMap = context.getViewRoot().getViewMap(true);
-            var nonce = (String) viewMap.get(CURRENT_NONCE);
+            var requestMap = context.getAttributes();
+            var nonce = (String) requestMap.get(CURRENT_NONCE);
 
-            if (nonce == null || !context.getPartialViewContext().isPartialRequest()) {
-                byte[] bytes = new byte[32];
-                secureRandom.nextBytes(bytes);
-                nonce = Base64.getEncoder().encodeToString(bytes);
+            if (nonce == null) {
+                var viewMap = context.getViewRoot().getViewMap(true);
+
+                if (context.getPartialViewContext().isPartialRequest()) {
+                    nonce = (String) viewMap.get(CURRENT_NONCE);
+                }
+
+                if (nonce == null) {
+                    byte[] bytes = new byte[32];
+                    secureRandom.nextBytes(bytes);
+                    nonce = Base64.getEncoder().encodeToString(bytes);
+                }
+
+                requestMap.put(CURRENT_NONCE, nonce);
                 viewMap.put(CURRENT_NONCE, nonce);
             }
 
