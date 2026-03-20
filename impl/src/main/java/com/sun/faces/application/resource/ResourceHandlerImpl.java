@@ -403,7 +403,7 @@ public class ResourceHandlerImpl extends ResourceHandler {
             var viewMap = context.getViewRoot().getViewMap(true);
             var nonce = (String) viewMap.get(CURRENT_NONCE);
 
-            if (nonce == null || !context.getPartialViewContext().isPartialRequest()) {
+            if (nonce == null) {
                 byte[] bytes = new byte[32];
                 secureRandom.nextBytes(bytes);
                 nonce = Base64.getEncoder().encodeToString(bytes);
