@@ -5483,8 +5483,10 @@
         </attribute>
         <attribute>
             <description>
+                <![CDATA[<span class="changed_added_2_0">
                 Flag indicating whether previously handled messages
                 are redisplayed or not. Default value is "true".
+                </span>]]>
             </description>
             <name>redisplay</name>
             <required>false</required>
@@ -5755,8 +5757,10 @@
         </attribute>
         <attribute>
             <description>
+                <![CDATA[<span class="changed_added_2_0">
                 Flag indicating whether previously handled messages
                 are redisplayed or not. Default value is "true".
+                </span>]]>
             </description>
             <name>redisplay</name>
             <required>false</required>
