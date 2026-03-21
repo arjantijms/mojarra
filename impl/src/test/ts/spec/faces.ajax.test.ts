@@ -326,12 +326,12 @@ describe("faces.ajax.request: parameter encoding", () => {
 
     test("special characters in param values are URI-encoded", () => {
         ajax().request(button, null, { params: { msg: "a&b=c d" } });
-        expect(lastXHR().body).toContain("msg=a%26b%3Dc+d");
+        expect(lastXHR().body).toContain("msg=a%26b%3Dc%20d");
     });
 
     test("special characters in param names are URI-encoded", () => {
         ajax().request(button, null, { params: { "my key": "val" } });
-        expect(lastXHR().body).toContain("my+key=val");
+        expect(lastXHR().body).toContain("my%20key=val");
     });
 
     test("empty string param value is encoded as key=", () => {
@@ -378,17 +378,17 @@ describe("faces.ajax.request: execute option", () => {
 
     test("@form resolves to form id", () => {
         ajax().request(button, null, { execute: "@form" });
-        expect(lastXHR().body).toContain("jakarta.faces.partial.execute=testButton+testForm");
+        expect(lastXHR().body).toContain("jakarta.faces.partial.execute=testButton%20testForm");
     });
 
     test("explicit ids are sent as-is", () => {
         ajax().request(button, null, { execute: "comp1 comp2" });
-        expect(lastXHR().body).toContain("jakarta.faces.partial.execute=testButton+comp1+comp2");
+        expect(lastXHR().body).toContain("jakarta.faces.partial.execute=testButton%20comp1%20comp2");
     });
 
     test("source element is prepended to execute list if missing", () => {
         ajax().request(button, null, { execute: "other" });
-        expect(lastXHR().body).toContain("jakarta.faces.partial.execute=testButton+other");
+        expect(lastXHR().body).toContain("jakarta.faces.partial.execute=testButton%20other");
     });
 });
 
@@ -435,7 +435,7 @@ describe("faces.ajax.request: render option", () => {
 
     test("explicit ids are sent", () => {
         ajax().request(button, null, { render: "output1 output2" });
-        expect(lastXHR().body).toContain("jakarta.faces.partial.render=output1+output2");
+        expect(lastXHR().body).toContain("jakarta.faces.partial.render=output1%20output2");
     });
 });
 

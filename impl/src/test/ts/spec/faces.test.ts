@@ -235,7 +235,7 @@ describe("faces.getViewState", () => {
         ta.name = "comment";
         ta.value = "hello world";
         form.appendChild(ta);
-        expect((faces.getViewState as Function)(form)).toBe("comment=hello+world");
+        expect((faces.getViewState as Function)(form)).toBe("comment=hello%20world");
     });
 
     test("URL-encodes special characters", () => {

@@ -1948,13 +1948,14 @@ if (!((faces && faces.specversion && faces.specversion >= 40000 ) &&
                         req.parameters["AjaxRequestUniqueId"] = new Date().getTime() + "" + req.requestIndex;
                     }
                     var content = null; // For POST requests, to hold query string
-                    var params = new URLSearchParams(req.queryString);
                     for (var i in req.parameters) {
                         if (req.parameters.hasOwnProperty(i)) {
-                            params.append(i, req.parameters[i]);
+                            if (req.queryString.length > 0) {
+                                req.queryString += "&";
+                            }
+                            req.queryString += encodeURIComponent(i) + "=" + encodeURIComponent(req.parameters[i]);
                         }
                     }
-                    req.queryString = params.toString();
                     if (req.method === "GET") {
                         if (req.queryString.length > 0) {
                             req.url += ((req.url.indexOf("?") > -1) ? "&" : "?") + req.queryString;
@@ -3132,9 +3133,17 @@ if (!((faces && faces.specversion && faces.specversion >= 40000 ) &&
         }
         var els = form.elements;
         var len = els.length;
-        var params = new URLSearchParams();
+        // create an array which we'll use to hold all the intermediate strings
+        // this bypasses a problem in IE when repeatedly concatenating very
+        // large strings - we'll perform the concatenation once at the end
+        var qString = [];
         var addField = function(name, value) {
-            params.append(name, value);
+            var tmpStr = "";
+            if (qString.length > 0) {
+                tmpStr = "&";
+            }
+            tmpStr += encodeURIComponent(name) + "=" + encodeURIComponent(value);
+            qString.push(tmpStr);
         };
         for (var i = 0; i < len; i++) {
             var el = els[i];
@@ -3171,14 +3180,15 @@ if (!((faces && faces.specversion && faces.specversion >= 40000 ) &&
                         var nodeName = el.nodeName.toLowerCase();
                         if (nodeName === "input" || nodeName === "select" ||
                             nodeName === "button" || nodeName === "object" ||
-                            nodeName === "textarea") {
+                            nodeName === "textarea") {                                 
                             addField(el.name, el.value);
                         }
                         break;
                 }
             }
         }
-        return params.toString();
+        // concatenate the array
+        return qString.join("");
     };
 
     /**
