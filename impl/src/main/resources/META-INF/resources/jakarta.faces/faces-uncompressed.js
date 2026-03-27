@@ -2724,12 +2724,7 @@ if ( !( (window.faces && window.faces.specversion && window.faces.specversion >=
          * @ignore
          */
         const fetchWindowIdFromURL = function fetchWindowIdFromURL() {
-            const href = window.location.href;
-            const windowId = "windowId";
-            const regex = new RegExp("[\\?&]" + windowId + "=([^&#\\;]*)");
-            const results = regex.exec(href);
-            //initial trial over the url and a regexp
-            return (results != null) ? results[1] : null;
+            return new URLSearchParams(location.search).get("windowId");
         };
 
         //byId ($)
