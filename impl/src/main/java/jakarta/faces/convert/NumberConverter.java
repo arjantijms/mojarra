@@ -16,12 +16,13 @@
 
 package jakarta.faces.convert;
 
-import java.lang.reflect.Method;
+
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.util.Currency;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -679,18 +680,6 @@ public class NumberConverter implements Converter, PartialStateHolder {
 
     // --------------------------------------------------------- Private Methods
 
-    private static Class<?> currencyClass;
-
-    static {
-        try {
-            currencyClass = Class.forName("java.util.Currency");
-            // container's runtime is J2SE 1.4 or greater
-        } catch (Exception ignored) {
-        }
-    }
-
-    private static final Class<?>[] GET_INSTANCE_PARAM_TYPES = new Class<?>[] { String.class };
-
     /**
      * 
      * Override the formatting locale's default currency symbol with the specified currency code (specified via the
@@ -698,9 +687,7 @@ public class NumberConverter implements Converter, PartialStateHolder {
      * </p>
      * 
      * <p>
-     * If both "currencyCode" and "currencySymbol" are present, "currencyCode" takes precedence over "currencySymbol" if the
-     * java.util.Currency class is defined in the container's runtime (that is, if the container's runtime is J2SE 1.4 or
-     * greater), and "currencySymbol" takes precendence over "currencyCode" otherwise.
+     * If both "currencyCode" and "currencySymbol" are present, "currencyCode" takes precedence over "currencySymbol"
      * </p>
      * 
      * <p>
@@ -710,17 +697,15 @@ public class NumberConverter implements Converter, PartialStateHolder {
      * <pre>
      * Example:
      * 
-     * JDK    "currencyCode" "currencySymbol" Currency symbol being displayed
+     * "currencyCode" "currencySymbol" Currency symbol being displayed
      * -----------------------------------------------------------------------
-     * all         ---            ---         Locale's default currency symbol
+     *      ---            ---         Locale's default currency symbol
+     *
+     *      EUR            ---         Locale's currency symbol for Euro
+     *
+     *      ---             €          €
      * 
-     * <1.4        EUR            ---         EUR
-     * >=1.4       EUR            ---         Locale's currency symbol for Euro
-     * 
-     * all         ---           \u20AC       \u20AC
-     * 
-     * <1.4        EUR           \u20AC       \u20AC
-     * >=1.4       EUR           \u20AC       Locale's currency symbol for Euro
+     *      EUR             €          Locale's currency symbol for Euro
      * </pre>
      *
      * @param formatter The <code>NumberFormatter</code> to be configured
@@ -737,50 +722,27 @@ public class NumberConverter implements Converter, PartialStateHolder {
         }
 
         if (currencyCode != null && currencySymbol != null) {
-            if (currencyClass != null) {
-                code = currencyCode;
-            } else {
-                symbol = currencySymbol;
-            }
-        } else if (currencyCode == null) {
+            code = currencyCode;
+        }
+        else if (currencyCode == null) {
             symbol = currencySymbol;
-        } else {
-            if (currencyClass != null) {
-                code = currencyCode;
-            } else {
-                symbol = currencyCode;
-            }
+        }
+        else {
+            code = currencyCode;
         }
 
         if (code != null) {
-            Object[] methodArgs = new Object[1];
-
-            /*
-             * java.util.Currency.getInstance()
-             */
-            Method m = currencyClass.getMethod("getInstance", GET_INSTANCE_PARAM_TYPES);
-            methodArgs[0] = code;
-            Object currency = m.invoke(null, methodArgs);
-
-            /*
-             * java.text.NumberFormat.setCurrency()
-             */
-            Class<?>[] paramTypes = new Class[1];
-            paramTypes[0] = currencyClass;
-            Class<?> numberFormatClass = Class.forName("java.text.NumberFormat");
-            m = numberFormatClass.getMethod("setCurrency", paramTypes);
-            methodArgs[0] = currency;
-            m.invoke(formatter, methodArgs);
-        } else {
-            /*
-             * Let potential ClassCastException propagate up (will almost never happen)
-             */
+            Currency currency = Currency.getInstance(code);
+            // set the current currency to the passed formatter
+            formatter.setCurrency(currency);
+        }
+        else {
+            // Let potential ClassCastException propagate up (will almost never happen)
             DecimalFormat df = (DecimalFormat) formatter;
             DecimalFormatSymbols dfs = df.getDecimalFormatSymbols();
             dfs.setCurrencySymbol(symbol);
             df.setDecimalFormatSymbols(dfs);
         }
-
     }
 
     /**
