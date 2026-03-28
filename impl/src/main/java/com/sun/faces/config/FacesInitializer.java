@@ -17,7 +17,6 @@
 
 package com.sun.faces.config;
 
-import static com.sun.faces.RIConstants.ANNOTATED_CLASSES;
 import static com.sun.faces.RIConstants.FACES_SERVLET_MAPPINGS;
 import static com.sun.faces.RIConstants.FACES_SERVLET_REGISTRATION;
 import static com.sun.faces.util.Util.getExistingFacesServletRegistration;
@@ -107,7 +106,6 @@ public class FacesInitializer implements ServletContainerInitializer {
         boolean appHasFacesServlet = isFacesServletRegistrationPresent(servletContext);
 
         if (appHasFacesContent || appHasFacesServlet) {
-            addAnnotatedClasses(classes, servletContext);
             InitFacesContext initFacesContext = new InitFacesContext(servletContext);
 
             try {
@@ -126,35 +124,7 @@ public class FacesInitializer implements ServletContainerInitializer {
             finally {
                 initFacesContext.release();
             }
-        } else {
-            // No Faces content, so if the other initializer added annotated classes they won't be needed
-            if (servletContext.getAttribute(ANNOTATED_CLASSES) != null) {
-                servletContext.removeAttribute(ANNOTATED_CLASSES);
-            }
         }
-    }
-
-    public static void addAnnotatedClasses(Set<Class<?>> classes, ServletContext servletContext) {
-        if (isEmpty(classes)) {
-            // Nothing to add, just return
-            return;
-        }
-
-        @SuppressWarnings("unchecked")
-        Set<Class<?>> existingClasses = (Set<Class<?>>) servletContext.getAttribute(ANNOTATED_CLASSES);
-
-        if (isEmpty(existingClasses)) {
-            // No classes set before, so set the new classes as the initial set
-            servletContext.setAttribute(ANNOTATED_CLASSES, classes);
-            return;
-        }
-
-        // We have both existing and new classes, so create a new merged set.
-        Set<Class<?>> newAnnotatedClasses = new HashSet<Class<?>>();
-        newAnnotatedClasses.addAll(classes);
-        newAnnotatedClasses.addAll(existingClasses);
-
-        servletContext.setAttribute(ANNOTATED_CLASSES, newAnnotatedClasses);
     }
 
     // --------------------------------------------------------- Private Methods

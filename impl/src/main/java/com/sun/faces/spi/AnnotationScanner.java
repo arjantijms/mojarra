@@ -24,8 +24,10 @@ import java.util.Map;
 import jakarta.servlet.ServletContext;
 
 /**
- *
+ * @deprecated Since 5.0. Annotation scanning is now handled via CDI bean discovery.
+ * This interface is retained only for binary compatibility with existing {@link InjectionProvider} implementations (e.g. GlassFish HK2).
  */
+@Deprecated(since = "5.0", forRemoval = true)
 public interface AnnotationScanner {
 
     Map<String, List<ScannedAnnotation>> getAnnotatedClassesInCurrentModule(ServletContext extContext) throws InjectionProviderException;

@@ -36,7 +36,7 @@ import jakarta.faces.view.facelets.TagHandler;
 import jakarta.faces.view.facelets.TagHandlerDelegate;
 import jakarta.faces.view.facelets.ValidatorHandler;
 
-import com.sun.faces.cdi.CdiValidator;
+
 import com.sun.faces.component.validator.ComponentValidators;
 import com.sun.faces.facelets.tag.MetaRulesetImpl;
 import com.sun.faces.util.RequestStateManager;
@@ -119,7 +119,7 @@ public class ValidatorTagHandlerDelegateImpl extends TagHandlerDelegate implemen
         boolean found = false;
 
         for (Validator<?> validator : validators) {
-            if (validator.getClass().equals(v.getClass()) && !(v instanceof CdiValidator)) {
+            if (validator.getClass().equals(v.getClass())) {
                 found = true;
                 break;
             }

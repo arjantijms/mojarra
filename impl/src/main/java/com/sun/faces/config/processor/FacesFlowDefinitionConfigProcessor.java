@@ -499,7 +499,7 @@ public class FacesFlowDefinitionConfigProcessor extends AbstractConfigProcessor 
             String destinationId = facesFlowIdList.item(0).getNodeValue().trim();
 
             NodeList definingDocumentIdList = (NodeList) xpath.evaluate(".//ns1:flow-document-id/text()", facesFlowRefNode, XPathConstants.NODESET);
-            if (null != definingDocumentIdList && 1 != definingDocumentIdList.getLength()) {
+            if (null != definingDocumentIdList && definingDocumentIdList.getLength() > 1) {
                 throw new XPathExpressionException("Within <flow-reference> must have at most one <flow-document-id>");
             }
             String definingDocumentId = "";
