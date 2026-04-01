@@ -16,7 +16,6 @@
 
 package com.sun.faces.config;
 
-import static com.sun.faces.RIConstants.ANNOTATED_CLASSES;
 import static com.sun.faces.RIConstants.ERROR_PAGE_PRESENT_KEY_NAME;
 import static com.sun.faces.RIConstants.FACES_SERVLET_MAPPINGS;
 import static com.sun.faces.RIConstants.FACES_SERVLET_REGISTRATION;
@@ -247,7 +246,6 @@ public class ConfigureListener implements ServletRequestListener, HttpSessionLis
             caughtThrowable = t;
 
         } finally {
-            servletContextEvent.getServletContext().removeAttribute(ANNOTATED_CLASSES);
             servletContextEvent.getServletContext().removeAttribute(FACES_SERVLET_MAPPINGS);
 
             Verifier.setCurrentInstance(null);

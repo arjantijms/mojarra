@@ -178,16 +178,24 @@ public class ViewMetadataImpl extends ViewMetadata {
      */
     private static Map<String, Object> collectConstants(String type) {
         Map<String, Object> constants = new LinkedHashMap<>();
+        Class<?> clazz = toClass(type);
 
-        for (Field field : toClass(type).getFields()) {
-            int modifiers = field.getModifiers();
+        if (clazz.isEnum()) {
+            // Use getEnumConstants() for enums to guarantee declaration order.
+            for (Object enumConstant : clazz.getEnumConstants()) {
+                constants.put(((Enum<?>) enumConstant).name(), enumConstant);
+            }
+        } else {
+            for (Field field : clazz.getFields()) {
+                int modifiers = field.getModifiers();
 
-            if (isPublic(modifiers) && isStatic(modifiers) && isFinal(modifiers)) {
-                try {
-                    constants.put(field.getName(), field.get(null));
-                } catch (Exception e) {
-                    throw new IllegalArgumentException(
-                            String.format("UIImportConstants cannot access constant field '%s' of type '%s'.", type, field.getName()), e);
+                if (isPublic(modifiers) && isStatic(modifiers) && isFinal(modifiers)) {
+                    try {
+                        constants.put(field.getName(), field.get(null));
+                    } catch (Exception e) {
+                        throw new IllegalArgumentException(
+                                String.format("UIImportConstants cannot access constant field '%s' of type '%s'.", type, field.getName()), e);
+                    }
                 }
             }
         }

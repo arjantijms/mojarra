@@ -47,9 +47,9 @@ public class FacesConfigInfo {
     private static final String NAME = "name";
     private static final String OTHERS = "others";
 
-    private double version = 2.0;
+    private double version = 4.0;
     private final boolean isWebInfFacesConfig;
-    private final boolean metadataComplete;
+
     private List<String> absoluteOrdering;
 
     // -------------------------------------------------------- Constructors
@@ -67,11 +67,10 @@ public class FacesConfigInfo {
         isWebInfFacesConfig = isWebinfFacesConfig(document);
         version = getVersion(document);
 
-        if (isWebInfFacesConfig && isVersionGreaterOrEqual(2.0)) {
+        if (isWebInfFacesConfig) {
             extractOrdering(document);
         }
 
-        metadataComplete = isMetadataComplete(document);
 
     }
 
@@ -94,13 +93,6 @@ public class FacesConfigInfo {
         return isWebInfFacesConfig;
     }
 
-    /**
-     * @return <code>true</code> if the <code>Document</code> provided at construction time represents the
-     * <code>/WEB-INF/faces-config.xml</code> and is metadata complete.
-     */
-    public boolean isMetadataComplete() {
-        return metadataComplete;
-    }
 
     /**
      * @return a <code>List</code> of document names that in the order that they should be processed. The presense of the
@@ -117,7 +109,7 @@ public class FacesConfigInfo {
     /**
      * @param document document representing <code>WEB-INF/faces-config.xml</code>
      * @return return the value of the version attribute of the provided document. If no version attribute is specified,
-     * assume 1.1.
+     * assume 4.0.
      */
     private double getVersion(Document document) {
 
@@ -126,7 +118,7 @@ public class FacesConfigInfo {
             return Double.parseDouble(version);
         }
 
-        return 1.1d;
+        return 4.0d;
     }
 
     /**
@@ -137,16 +129,6 @@ public class FacesConfigInfo {
         return !isEmpty(document.getDocumentElement().getAttribute(ParseConfigResourceToDOMTask.WEB_INF_MARKER));
     }
 
-    private boolean isMetadataComplete(Document document) {
-
-        if (isVersionGreaterOrEqual(2.0)) {
-            String metadataComplete = document.getDocumentElement().getAttributeNS(document.getNamespaceURI(), "metadata-complete");
-            return Boolean.parseBoolean(metadataComplete);
-        }
-
-        // not a 2.0 application, so annotation processing will not occur
-        return true;
-    }
 
     private void extractOrdering(Document document) {
 

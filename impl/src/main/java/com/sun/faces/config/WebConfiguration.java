@@ -735,7 +735,7 @@ public class WebConfiguration {
         DisableUnicodeEscaping("com.sun.faces.disableUnicodeEscaping", "auto"),
         DuplicateJARPattern("com.sun.faces.duplicateJARPattern", ""),
         FullStateSavingViewIds(StateManager.FULL_STATE_SAVING_VIEW_IDS_PARAM_NAME, ""),
-        AnnotationScanPackages("com.sun.faces.annotationScanPackages", ""),
+
         FaceletsProcessingFileExtensionProcessAs("", ""),
         ;
 

@@ -27,6 +27,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -89,6 +90,11 @@ public class InjectionProviderFactory {
         InjectionProvider provider = getProviderInstance(providerClass, extContext);
 
         if (!NoopInjectionProvider.class.equals(provider.getClass()) && !WebContainerInjectionProvider.class.equals(provider.getClass())) {
+            if (provider instanceof AnnotationScanner) {
+                LOGGER.log(WARNING, "InjectionProvider {0} implements deprecated AnnotationScanner interface which is no longer used. "
+                        + "Annotation scanning is now handled via CDI bean discovery. Please remove the AnnotationScanner interface from the implementation.",
+                        provider.getClass().getName());
+            }
             if (LOGGER.isLoggable(Level.FINE)) {
                 LOGGER.log(Level.FINE, "faces.spi.injection.provider_configured", new Object[] { provider.getClass().getName() });
             }
@@ -353,6 +359,7 @@ public class InjectionProviderFactory {
      * not specified or is invalid.
      * </p>
      */
+    @SuppressWarnings("deprecation")
     private static final class NoopInjectionProvider implements InjectionProvider, AnnotationScanner {
 
         /**

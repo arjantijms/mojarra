@@ -20,6 +20,7 @@ import static com.sun.faces.cdi.CdiUtils.addAnnotatedTypes;
 import static com.sun.faces.cdi.CdiUtils.getAnnotation;
 import static java.util.Collections.unmodifiableMap;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -39,11 +40,20 @@ import jakarta.enterprise.inject.spi.AnnotatedField;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.ProcessBean;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
+import jakarta.enterprise.inject.spi.WithAnnotations;
 import jakarta.faces.annotation.ManagedProperty;
+import jakarta.faces.component.FacesComponent;
+import jakarta.faces.component.behavior.FacesBehavior;
+import jakarta.faces.convert.FacesConverter;
+import jakarta.faces.event.NamedEvent;
 import jakarta.faces.model.DataModel;
 import jakarta.faces.model.FacesDataModel;
+import jakarta.faces.render.FacesBehaviorRenderer;
+import jakarta.faces.render.FacesRenderer;
+import jakarta.faces.validator.FacesValidator;
 
 import com.sun.faces.push.WebsocketChannelManager;
 import com.sun.faces.push.WebsocketSessionManager;
@@ -67,6 +77,11 @@ public class CdiExtension implements Extension {
             InjectionPointGenerator.class,
             WebsocketPushContextProducer.class
     };
+
+    /**
+     * Map of annotation types to classes annotated with them, discovered during CDI bean discovery.
+     */
+    private final Map<Class<? extends Annotation>, Set<Class<?>>> annotatedClasses = new HashMap<>();
 
     /**
      * Map of classes that can be wrapped by a data model to data model implementation classes
@@ -106,6 +121,32 @@ public class CdiExtension implements Extension {
      */
     public void beforeBeanDiscovery(@Observes BeforeBeanDiscovery beforeBeanDiscovery, BeanManager beanManager) {
         addAnnotatedTypes(beforeBeanDiscovery, beanManager, MOJARRA_MANAGED_BEANS);
+    }
+
+    /**
+     * ProcessAnnotatedType:
+     * <ul>
+     * <li>collect classes annotated with Faces configuration annotations for registration with the runtime
+     * </ul>
+     *
+     * @param <T> the generic bean type
+     * @param event the process annotated type event
+     */
+    public <T> void processAnnotatedType(
+            @Observes @WithAnnotations({
+                FacesComponent.class, FacesConverter.class, FacesValidator.class,
+                FacesRenderer.class, FacesBehaviorRenderer.class, FacesBehavior.class, NamedEvent.class
+            }) ProcessAnnotatedType<T> event) {
+        Class<?> clazz = event.getAnnotatedType().getJavaClass();
+        for (Annotation annotation : clazz.getAnnotations()) {
+            Class<? extends Annotation> annotationType = annotation.annotationType();
+            if (annotationType == FacesComponent.class || annotationType == FacesConverter.class
+                    || annotationType == FacesValidator.class || annotationType == FacesRenderer.class
+                    || annotationType == FacesBehaviorRenderer.class || annotationType == FacesBehavior.class
+                    || annotationType == NamedEvent.class) {
+                annotatedClasses.computeIfAbsent(annotationType, k -> new HashSet<>()).add(clazz);
+            }
+        }
     }
 
     /**
@@ -274,5 +315,14 @@ public class CdiExtension implements Extension {
      */
     public Map<Class<?>, Class<? extends DataModel<?>>> getForClassToDataModelClass() {
         return forClassToDataModelClass;
+    }
+
+    /**
+     * Gets the map of annotation types to classes annotated with them, discovered during CDI bean discovery.
+     *
+     * @return Map of annotation types to annotated classes
+     */
+    public Map<Class<? extends Annotation>, Set<Class<?>>> getAnnotatedClasses() {
+        return annotatedClasses;
     }
 }

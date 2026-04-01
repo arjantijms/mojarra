@@ -17,7 +17,6 @@
 
 package com.sun.faces.config;
 
-import static com.sun.faces.RIConstants.ANNOTATED_CLASSES;
 import static com.sun.faces.RIConstants.FACES_SERVLET_MAPPINGS;
 import static com.sun.faces.RIConstants.FACES_SERVLET_REGISTRATION;
 import static com.sun.faces.util.Util.getExistingFacesServletRegistration;
@@ -30,30 +29,18 @@ import java.util.logging.Logger;
 
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.faces.annotation.FacesConfig;
-import jakarta.faces.application.ResourceDependencies;
-import jakarta.faces.application.ResourceDependency;
 import jakarta.faces.component.FacesComponent;
-import jakarta.faces.component.UIComponent;
 import jakarta.faces.component.behavior.FacesBehavior;
 import jakarta.faces.context.FacesContext;
-import jakarta.faces.convert.Converter;
 import jakarta.faces.convert.FacesConverter;
-import jakarta.faces.event.ListenerFor;
-import jakarta.faces.event.ListenersFor;
 import jakarta.faces.event.NamedEvent;
-import jakarta.faces.event.PhaseListener;
 import jakarta.faces.flow.FlowScoped;
-import jakarta.faces.flow.builder.FlowBuilderParameter;
-import jakarta.faces.flow.builder.FlowDefinition;
 import jakarta.faces.lifecycle.ClientWindowScoped;
-import jakarta.faces.model.DataModel;
 import jakarta.faces.model.FacesDataModel;
 import jakarta.faces.push.Push;
 import jakarta.faces.render.FacesBehaviorRenderer;
 import jakarta.faces.render.FacesRenderer;
-import jakarta.faces.render.Renderer;
 import jakarta.faces.validator.FacesValidator;
-import jakarta.faces.validator.Validator;
 import jakarta.faces.view.ViewScoped;
 import jakarta.faces.webapp.FacesServlet;
 import jakarta.servlet.ServletContainerInitializer;
@@ -70,21 +57,46 @@ import com.sun.faces.util.FacesLogger;
  * Initializes Jakarta Faces if at least one of the following conditions is met:
  *
  * <ul>
- * <li>The <code>Set</code> of classes passed to this initializer contains an user-defined Faces type, or</li>
- * <li><code>FacesServlet</code> has been explicitly mapped ,or</li>
+ * <li>The <code>Set</code> of classes passed to this initializer contains a user-defined Faces type, or</li>
+ * <li><code>FacesServlet</code> has been explicitly mapped, or</li>
  * <li><code>/WEB-INF/faces-config.xml</code> exists</li>
  * </ul>
  *
  * If it is met, and the <code>FacesServlet</code> has not been explicitly mapped,
  * then add mappings <em>*.xhtml</em>, <em>/faces</em>, <em>*.jsf</em>, and <em>*.faces</em> for the FacesServlet.
+ *
+ * <p>
+ * The {@link HandlesTypes @HandlesTypes} annotation lists the Faces annotation types whose presence in the application
+ * indicates that Jakarta Faces should be initialized. The actual registration of annotated classes with the Faces
+ * runtime is handled by CDI via {@link com.sun.faces.cdi.CdiExtension}; these types are only used here as a boolean
+ * check to auto-detect Faces applications. The list contains:
+ *
+ * <ul>
+ * <li>Faces configuration annotations ({@link FacesBehavior}, {@link FacesBehaviorRenderer}, {@link FacesComponent},
+ * {@link FacesConverter}, {@link FacesDataModel}, {@link FacesRenderer}, {@link FacesValidator}, {@link NamedEvent})
+ * &mdash; the primary indicators that an application defines Faces artifacts.</li>
+ * <li>{@link FacesConfig} &mdash; the annotation-based alternative to <code>faces-config.xml</code> for activating
+ * Faces.</li>
+ * <li>Faces CDI scopes and qualifiers ({@link ViewScoped}, {@link FlowScoped}, {@link ClientWindowScoped},
+ * {@link Push}) &mdash; these may be present in applications that use Faces CDI integration without any of the above
+ * configuration annotations or <code>faces-config.xml</code>.</li>
+ * </ul>
+ *
+ * <p>
+ * Notably excluded are Faces API interfaces and abstract classes (such as <code>UIComponent</code>,
+ * <code>Converter</code>, <code>Validator</code>, <code>Renderer</code>, <code>DataModel</code>, and
+ * <code>PhaseListener</code>) as well as non-configuration annotations (such as <code>ListenerFor</code>,
+ * <code>ResourceDependency</code>, <code>FlowDefinition</code>, and <code>FlowBuilderParameter</code>). In previous
+ * versions these were included for two reasons: to broaden Faces auto-detection, and to collect annotated classes for
+ * registration via class scanning. Since Faces 5.0, annotation discovery is handled entirely by CDI, so the collected
+ * classes are no longer used for registration. As for auto-detection, any application that implements these interfaces
+ * or uses these annotations will in practice also have at least one of the types listed above, a
+ * <code>faces-config.xml</code>, or an explicit <code>FacesServlet</code> mapping.
  */
 @HandlesTypes({
-
-    // Jakarta Faces specific
-    ClientWindowScoped.class, Converter.class, DataModel.class, FacesBehavior.class, FacesBehaviorRenderer.class, FacesComponent.class, FacesConfig.class,
-    FacesConverter.class, FacesDataModel.class, FacesRenderer.class, FacesValidator.class, FlowBuilderParameter.class, FlowDefinition.class, FlowScoped.class,
-    ListenerFor.class, ListenersFor.class, NamedEvent.class, PhaseListener.class, Push.class, Renderer.class, ResourceDependencies.class, ResourceDependency.class,
-    UIComponent.class, Validator.class, ViewScoped.class,
+    ClientWindowScoped.class, FacesBehavior.class, FacesBehaviorRenderer.class, FacesComponent.class, FacesConfig.class,
+    FacesConverter.class, FacesDataModel.class, FacesRenderer.class, FacesValidator.class, FlowScoped.class,
+    NamedEvent.class, Push.class, ViewScoped.class,
 })
 public class FacesInitializer implements ServletContainerInitializer {
 
@@ -107,7 +119,6 @@ public class FacesInitializer implements ServletContainerInitializer {
         boolean appHasFacesServlet = isFacesServletRegistrationPresent(servletContext);
 
         if (appHasFacesContent || appHasFacesServlet) {
-            addAnnotatedClasses(classes, servletContext);
             InitFacesContext initFacesContext = new InitFacesContext(servletContext);
 
             try {
@@ -126,35 +137,7 @@ public class FacesInitializer implements ServletContainerInitializer {
             finally {
                 initFacesContext.release();
             }
-        } else {
-            // No Faces content, so if the other initializer added annotated classes they won't be needed
-            if (servletContext.getAttribute(ANNOTATED_CLASSES) != null) {
-                servletContext.removeAttribute(ANNOTATED_CLASSES);
-            }
         }
-    }
-
-    public static void addAnnotatedClasses(Set<Class<?>> classes, ServletContext servletContext) {
-        if (isEmpty(classes)) {
-            // Nothing to add, just return
-            return;
-        }
-
-        @SuppressWarnings("unchecked")
-        Set<Class<?>> existingClasses = (Set<Class<?>>) servletContext.getAttribute(ANNOTATED_CLASSES);
-
-        if (isEmpty(existingClasses)) {
-            // No classes set before, so set the new classes as the initial set
-            servletContext.setAttribute(ANNOTATED_CLASSES, classes);
-            return;
-        }
-
-        // We have both existing and new classes, so create a new merged set.
-        Set<Class<?>> newAnnotatedClasses = new HashSet<Class<?>>();
-        newAnnotatedClasses.addAll(classes);
-        newAnnotatedClasses.addAll(existingClasses);
-
-        servletContext.setAttribute(ANNOTATED_CLASSES, newAnnotatedClasses);
     }
 
     // --------------------------------------------------------- Private Methods

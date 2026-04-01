@@ -26,7 +26,6 @@ import static com.sun.faces.spi.ConfigurationResourceProviderFactory.createProvi
 import static com.sun.faces.spi.ConfigurationResourceProviderFactory.ProviderType.FaceletConfig;
 import static com.sun.faces.spi.ConfigurationResourceProviderFactory.ProviderType.FacesConfig;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableList;
 import static java.util.logging.Level.FINE;
 
@@ -37,11 +36,8 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 import java.util.logging.Logger;
 
 import javax.naming.InitialContext;
@@ -50,6 +46,7 @@ import javax.naming.NamingException;
 import jakarta.el.ELContext;
 import jakarta.el.ELContextEvent;
 import jakarta.el.ELContextListener;
+import jakarta.enterprise.inject.spi.CDI;
 import jakarta.faces.FacesException;
 import jakarta.faces.FactoryFinder;
 import jakarta.faces.application.Application;
@@ -67,8 +64,7 @@ import com.sun.faces.config.configprovider.WebFacesConfigResourceProvider;
 import com.sun.faces.config.manager.DbfFactory;
 import com.sun.faces.config.manager.FacesConfigInfo;
 import com.sun.faces.config.manager.documents.DocumentInfo;
-import com.sun.faces.config.manager.tasks.FindAnnotatedConfigClasses;
-import com.sun.faces.config.manager.tasks.ProvideMetadataToAnnotationScanTask;
+import com.sun.faces.cdi.CdiExtension;
 import com.sun.faces.config.processor.ApplicationConfigProcessor;
 import com.sun.faces.config.processor.BehaviorConfigProcessor;
 import com.sun.faces.config.processor.ComponentConfigProcessor;
@@ -116,11 +112,6 @@ public class ConfigManager {
     private static final int NUMBER_OF_TASK_THREADS = 5;
 
     private static final String CONFIG_MANAGER_INSTANCE_KEY = FACES_PREFIX + "CONFIG_MANAGER_KEY";
-
-    /**
-     * The application-scoped key under which the Future responsible for annotation scanning is associated with.
-     */
-    private static final String ANNOTATIONS_SCAN_TASK_KEY = ConfigManager.class.getName() + "_ANNOTATION_SCAN_TASK";
 
     /**
      * <p>
@@ -188,21 +179,10 @@ public class ConfigManager {
 
     /**
      * @param ctx the involved faces context
-     * @return the results of the annotation scan task
+     * @return the annotated classes discovered during CDI bean discovery
      */
     public static Map<Class<? extends Annotation>, Set<Class<?>>> getAnnotatedClasses(FacesContext ctx) {
-        Map<String, Object> appMap = ctx.getExternalContext().getApplicationMap();
-
-        @SuppressWarnings("unchecked")
-        Future<Map<Class<? extends Annotation>, Set<Class<?>>>> scanTask = (Future<Map<Class<? extends Annotation>, Set<Class<?>>>>) appMap
-                .get(ANNOTATIONS_SCAN_TASK_KEY);
-
-        try {
-            return scanTask != null ? scanTask.get() : emptyMap();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new FacesException(e);
-        }
-
+        return CDI.current().select(CdiExtension.class).get().getAnnotatedClasses();
     }
 
     public static void removeInstance(ServletContext servletContext) {
@@ -244,10 +224,6 @@ public class ConfigManager {
 
                 InjectionProvider containerConnector = InjectionProviderFactory.createInstance(facesContext.getExternalContext());
                 facesContext.getAttributes().put(INJECTION_PROVIDER_KEY, containerConnector);
-
-                if (!lastFacesConfigInfo.isWebInfFacesConfig() || !lastFacesConfigInfo.isMetadataComplete()) {
-                    findAnnotations(facesDocuments, containerConnector, servletContext, facesContext, executor);
-                }
 
                 // See if the app is running in a HA enabled env
                 if (containerConnector instanceof HighAvailabilityEnabler) {
@@ -324,7 +300,6 @@ public class ConfigManager {
                 if (executor != null) {
                     executor.shutdown();
                 }
-                servletContext.removeAttribute(ANNOTATIONS_SCAN_TASK_KEY);
             }
         }
 
@@ -340,32 +315,6 @@ public class ConfigManager {
     }
 
     // --------------------------------------------------------- Private Methods
-
-    /**
-     * Execute the Task responsible for finding annotation classes
-     *
-     */
-    private void findAnnotations(DocumentInfo[] facesDocuments, InjectionProvider containerConnector, ServletContext servletContext, InitFacesContext context, ExecutorService executor) {
-        ProvideMetadataToAnnotationScanTask taskMetadata = new ProvideMetadataToAnnotationScanTask(facesDocuments, containerConnector);
-
-        Future<Map<Class<? extends Annotation>, Set<Class<?>>>> annotationScan;
-
-        if (executor != null) {
-            annotationScan = executor.submit(new FindAnnotatedConfigClasses(servletContext, taskMetadata));
-        } else {
-            annotationScan = new FutureTask<>(new FindAnnotatedConfigClasses(servletContext, taskMetadata));
-            ((FutureTask<Map<Class<? extends Annotation>, Set<Class<?>>>>) annotationScan).run();
-        }
-
-        pushTaskToContext(servletContext, annotationScan);
-    }
-
-    /**
-     * Push the provided <code>Future</code> to the specified <code>ServletContext</code>.
-     */
-    private void pushTaskToContext(ServletContext servletContext, Future<Map<Class<? extends Annotation>, Set<Class<?>>>> scanTask) {
-        servletContext.setAttribute(ANNOTATIONS_SCAN_TASK_KEY, scanTask);
-    }
 
     private boolean useThreads(ServletContext ctx) {
         return WebConfiguration.getInstance(ctx).isOptionEnabled(EnableThreading);
