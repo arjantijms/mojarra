@@ -28,30 +28,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import com.sun.faces.component.search.CompositeSearchKeywordResolver;
-import com.sun.faces.component.search.SearchExpressionContextFactoryImpl;
-import com.sun.faces.component.search.SearchExpressionHandlerImpl;
-import com.sun.faces.component.search.SearchKeywordResolverImplAll;
-import com.sun.faces.component.search.SearchKeywordResolverImplChild;
-import com.sun.faces.component.search.SearchKeywordResolverImplComposite;
-import com.sun.faces.component.search.SearchKeywordResolverImplForm;
-import com.sun.faces.component.search.SearchKeywordResolverImplId;
-import com.sun.faces.component.search.SearchKeywordResolverImplNamingContainer;
-import com.sun.faces.component.search.SearchKeywordResolverImplNext;
-import com.sun.faces.component.search.SearchKeywordResolverImplNone;
-import com.sun.faces.component.search.SearchKeywordResolverImplParent;
-import com.sun.faces.component.search.SearchKeywordResolverImplPrevious;
-import com.sun.faces.component.search.SearchKeywordResolverImplRoot;
-import com.sun.faces.component.search.SearchKeywordResolverImplThis;
-import com.sun.faces.component.visit.VisitContextFactoryImpl;
-import com.sun.faces.junit.JUnitFacesTestCaseBase;
-import com.sun.faces.mock.MockRenderKit;
-
 import jakarta.faces.FacesException;
 import jakarta.faces.FactoryFinder;
 import jakarta.faces.component.search.ComponentNotFoundException;
@@ -63,6 +39,29 @@ import jakarta.faces.component.search.SearchKeywordResolver;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.render.RenderKit;
 import jakarta.faces.render.RenderKitFactory;
+
+import org.glassfish.mojarra.component.search.CompositeSearchKeywordResolver;
+import org.glassfish.mojarra.component.search.SearchExpressionContextFactoryImpl;
+import org.glassfish.mojarra.component.search.SearchExpressionHandlerImpl;
+import org.glassfish.mojarra.component.search.SearchKeywordResolverImplAll;
+import org.glassfish.mojarra.component.search.SearchKeywordResolverImplChild;
+import org.glassfish.mojarra.component.search.SearchKeywordResolverImplComposite;
+import org.glassfish.mojarra.component.search.SearchKeywordResolverImplForm;
+import org.glassfish.mojarra.component.search.SearchKeywordResolverImplId;
+import org.glassfish.mojarra.component.search.SearchKeywordResolverImplNamingContainer;
+import org.glassfish.mojarra.component.search.SearchKeywordResolverImplNext;
+import org.glassfish.mojarra.component.search.SearchKeywordResolverImplNone;
+import org.glassfish.mojarra.component.search.SearchKeywordResolverImplParent;
+import org.glassfish.mojarra.component.search.SearchKeywordResolverImplPrevious;
+import org.glassfish.mojarra.component.search.SearchKeywordResolverImplRoot;
+import org.glassfish.mojarra.component.search.SearchKeywordResolverImplThis;
+import org.glassfish.mojarra.component.visit.VisitContextFactoryImpl;
+import org.glassfish.mojarra.junit.JUnitFacesTestCaseBase;
+import org.glassfish.mojarra.mock.MockRenderKit;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SearchExpressionHandlerTest extends JUnitFacesTestCaseBase {
 

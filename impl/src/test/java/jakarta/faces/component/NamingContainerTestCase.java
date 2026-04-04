@@ -23,16 +23,15 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import com.sun.faces.junit.JUnitFacesTestCaseBase;
-import com.sun.faces.mock.MockRenderKit;
-
 import jakarta.faces.FactoryFinder;
 import jakarta.faces.render.RenderKit;
 import jakarta.faces.render.RenderKitFactory;
+
+import org.glassfish.mojarra.junit.JUnitFacesTestCaseBase;
+import org.glassfish.mojarra.mock.MockRenderKit;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * <p>

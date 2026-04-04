@@ -24,9 +24,6 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-
 import jakarta.faces.application.Application;
 import jakarta.faces.application.ProjectStage;
 import jakarta.faces.context.ExternalContext;
@@ -34,6 +31,9 @@ import jakarta.faces.context.FacesContext;
 import jakarta.faces.event.PostConstructViewMapEvent;
 import jakarta.faces.event.PreDestroyViewMapEvent;
 import jakarta.servlet.http.HttpSession;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 public class UIViewRootTest {
 
@@ -123,8 +123,8 @@ public class UIViewRootTest {
          * Simulate our ViewMapListener.
          */
         Map<String, Object> viewMaps = new HashMap<>();
-        viewMaps.put((String) viewRoot1.getTransientStateHelper().getTransient("com.sun.faces.application.view.viewMapId"), viewMap);
-        sessionMap.put("com.sun.faces.application.view.activeViewMaps", viewMaps);
+        viewMaps.put((String) viewRoot1.getTransientStateHelper().getTransient("org.glassfish.mojarra.application.view.viewMapId"), viewMap);
+        sessionMap.put("org.glassfish.mojarra.application.view.activeViewMaps", viewMaps);
 
         viewRoot2.restoreState(facesContext, saved);
         viewMap = viewRoot2.getViewMap();

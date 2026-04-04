@@ -415,12 +415,12 @@
                         
                         <Export-Package>
                             jakarta.faces.*,
-                            com.sun.faces.*
+                            org.glassfish.mojarra.*
                         </Export-Package>
                         
                         <Import-Package>
                             jakarta.faces.*,
-                            com.sun.faces.*,
+                            org.glassfish.mojarra.*,
                             jakarta.servlet.annotation.*;resolution:=optional,
                             jakarta.servlet.*,
                             jakarta.el.*,
@@ -451,9 +451,9 @@
                             optional.
                         -->
                         <Require-Capability>
-                            osgi.serviceloader;filter:="(osgi.serviceloader=com.sun.faces.spi.FaceletConfigResourceProvider)";
+                            osgi.serviceloader;filter:="(osgi.serviceloader=org.glassfish.mojarra.spi.FaceletConfigResourceProvider)";
                             resolution:=optional;cardinality:=multiple,
-                            osgi.serviceloader;filter:="(osgi.serviceloader=com.sun.faces.spi.FacesConfigResourceProvider)";
+                            osgi.serviceloader;filter:="(osgi.serviceloader=org.glassfish.mojarra.spi.FacesConfigResourceProvider)";
                             resolution:=optional;cardinality:=multiple,
                             osgi.serviceloader;filter:="(osgi.serviceloader=jakarta.faces.application.ApplicationConfigurationPopulator)";
                             resolution:=optional;cardinality:=multiple,

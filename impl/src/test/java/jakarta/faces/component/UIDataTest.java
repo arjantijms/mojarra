@@ -23,11 +23,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import org.junit.jupiter.api.Test;
-
 import jakarta.faces.context.ExternalContext;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.render.RenderKit;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Manfred Riem (manfred.riem@oracle.com)

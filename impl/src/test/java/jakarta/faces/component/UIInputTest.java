@@ -21,13 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.validator.LengthValidator;
 import jakarta.faces.validator.LongRangeValidator;
 import jakarta.faces.validator.Validator;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 /**
  * @author Manfred Riem (manfred.riem@oracle.com)

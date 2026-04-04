@@ -28,21 +28,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import com.sun.faces.mock.MockExternalContext;
-import com.sun.faces.mock.MockFacesContext;
-import com.sun.faces.mock.MockHttpServletRequest;
-import com.sun.faces.mock.MockHttpServletResponse;
-import com.sun.faces.mock.MockLifecycle;
-import com.sun.faces.mock.MockServletContext;
-
 import jakarta.faces.FactoryFinder;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.event.FacesListener;
 import jakarta.faces.event.ValueChangeListener;
+
+import org.glassfish.mojarra.mock.MockExternalContext;
+import org.glassfish.mojarra.mock.MockFacesContext;
+import org.glassfish.mojarra.mock.MockHttpServletRequest;
+import org.glassfish.mojarra.mock.MockHttpServletResponse;
+import org.glassfish.mojarra.mock.MockLifecycle;
+import org.glassfish.mojarra.mock.MockServletContext;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class UIComponentBaseAttachedStateTestCase {
 

@@ -16,7 +16,7 @@
 
 package jakarta.faces;
 
-import static com.sun.faces.util.Util.createLocalDocumentBuilderFactory;
+import static org.glassfish.mojarra.util.Util.createLocalDocumentBuilderFactory;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Method;
@@ -28,15 +28,14 @@ import java.util.List;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import jakarta.faces.context.FacesContext;
+
+import org.glassfish.mojarra.config.manager.documents.DocumentInfo;
+import org.glassfish.mojarra.config.manager.documents.DocumentOrderingWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-
-import com.sun.faces.config.manager.documents.DocumentInfo;
-import com.sun.faces.config.manager.documents.DocumentOrderingWrapper;
-
-import jakarta.faces.context.FacesContext;
 
 public class FacesConfigOrderingTestCase {
 

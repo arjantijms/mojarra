@@ -24,15 +24,6 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import com.sun.faces.mock.MockCDIProvider;
-import com.sun.faces.mock.MockHttpServletRequest;
-import com.sun.faces.mock.MockHttpServletResponse;
-import com.sun.faces.mock.MockServletContext;
-
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.faces.application.Application;
 import jakarta.faces.application.ApplicationFactory;
@@ -41,23 +32,31 @@ import jakarta.faces.context.FacesContextFactory;
 import jakarta.faces.lifecycle.Lifecycle;
 import jakarta.faces.lifecycle.LifecycleFactory;
 
+import org.glassfish.mojarra.mock.MockCDIProvider;
+import org.glassfish.mojarra.mock.MockHttpServletRequest;
+import org.glassfish.mojarra.mock.MockHttpServletResponse;
+import org.glassfish.mojarra.mock.MockServletContext;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 public class FactoryFinderTestCase {
 
     public static String FACTORIES[][] = {
         {FactoryFinder.APPLICATION_FACTORY,
-            "com.sun.faces.mock.MockApplicationFactory"
+            "org.glassfish.mojarra.mock.MockApplicationFactory"
         },
         {FactoryFinder.EXTERNAL_CONTEXT_FACTORY,
-            "com.sun.faces.mock.MockExternalContextFactory"
+            "org.glassfish.mojarra.mock.MockExternalContextFactory"
         },
         {FactoryFinder.FACES_CONTEXT_FACTORY,
-            "com.sun.faces.mock.MockFacesContextFactory"
+            "org.glassfish.mojarra.mock.MockFacesContextFactory"
         },
         {FactoryFinder.LIFECYCLE_FACTORY,
-            "com.sun.faces.mock.MockLifecycleFactory"
+            "org.glassfish.mojarra.mock.MockLifecycleFactory"
         },
         {FactoryFinder.RENDER_KIT_FACTORY,
-            "com.sun.faces.mock.MockRenderKitFactory"
+            "org.glassfish.mojarra.mock.MockRenderKitFactory"
         }
     };
 
@@ -247,7 +246,7 @@ public class FactoryFinderTestCase {
         }
         // verify that the delegation works
         assertTrue(System.getProperty(FACTORIES[2][0]).equals("jakarta.faces.mock.MockFacesContextFactoryExtender"));
-        assertTrue(System.getProperty("oldImpl").equals("com.sun.faces.mock.MockFacesContextFactory"));
+        assertTrue(System.getProperty("oldImpl").equals("org.glassfish.mojarra.mock.MockFacesContextFactory"));
 
         servicesFile.delete();
         cServicesFile.delete();

@@ -1,1 +1,1 @@
-com.sun.faces.config.FacesInitializer
+org.glassfish.mojarra.config.FacesInitializer
