@@ -19,9 +19,9 @@ package jakarta.faces.component;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.Test;
-
 import jakarta.faces.convert.IntegerConverter;
+
+import org.junit.jupiter.api.Test;
 
 public class StateHolderSaverTestCase extends UIComponentBaseTestCase {
 

@@ -1,5 +1,5 @@
-com.sun.faces.application.view.ViewScopeExtension
-com.sun.faces.flow.FlowCDIExtension
-com.sun.faces.flow.FlowDiscoveryCDIExtension
-com.sun.faces.cdi.CdiExtension
-com.sun.faces.cdi.clientwindow.ClientWindowScopeExtension
+org.glassfish.mojarra.application.view.ViewScopeExtension
+org.glassfish.mojarra.flow.FlowCDIExtension
+org.glassfish.mojarra.flow.FlowDiscoveryCDIExtension
+org.glassfish.mojarra.cdi.CdiExtension
+org.glassfish.mojarra.cdi.clientwindow.ClientWindowScopeExtension

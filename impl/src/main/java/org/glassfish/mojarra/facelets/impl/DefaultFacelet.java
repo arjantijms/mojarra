@@ -1,0 +1,395 @@
+/*
+ * Copyright (c) 1997, 2021 Oracle and/or its affiliates. All rights reserved.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0, which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the
+ * Eclipse Public License v. 2.0 are satisfied: GNU General Public License,
+ * version 2 with the GNU Classpath Exception, which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ */
+
+package org.glassfish.mojarra.facelets.impl;
+
+import static org.glassfish.mojarra.facelets.tag.ui.IncludeHandler.INCLUDED_KEY;
+
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import jakarta.el.ELException;
+import jakarta.el.ExpressionFactory;
+import jakarta.faces.FacesException;
+import jakarta.faces.application.ProjectStage;
+import jakarta.faces.component.Doctype;
+import jakarta.faces.component.TransientStateHelper;
+import jakarta.faces.component.UIComponent;
+import jakarta.faces.context.FacesContext;
+import jakarta.faces.view.facelets.Facelet;
+import jakarta.faces.view.facelets.FaceletContext;
+import jakarta.faces.view.facelets.FaceletException;
+import jakarta.faces.view.facelets.FaceletHandler;
+
+import org.glassfish.mojarra.facelets.tag.faces.ComponentSupport;
+import org.glassfish.mojarra.util.FacesLogger;
+import org.glassfish.mojarra.util.Util;
+
+/**
+ * Default Facelet implementation.
+ *
+ * @author Jacob Hookom
+ * @version $Id$
+ */
+final class DefaultFacelet extends Facelet implements XMLFrontMatterSaver {
+
+    private static final Logger log = FacesLogger.FACELETS_FACELET.getLogger();
+
+    private final static String APPLIED_KEY = "org.glassfish.mojarra.facelets.APPLIED";
+    private static final String JAKARTA_FACES_ERROR_XHTML = "jakarta.faces.error.xhtml";
+
+    private final String alias;
+
+    private final ExpressionFactory elFactory;
+
+    private final DefaultFaceletFactory factory;
+
+    private final long createTime;
+
+    private final long refreshPeriodInMillis;
+
+    private final FaceletHandler root;
+
+    private final URL src;
+
+    private IdMapper mapper;
+
+    private Doctype savedDoctype;
+
+    private String savedXMLDecl;
+
+    public DefaultFacelet(DefaultFaceletFactory factory, ExpressionFactory el, URL src, String alias, FaceletHandler root) {
+
+        this.factory = factory;
+        elFactory = el;
+        this.src = src;
+        this.root = root;
+        this.alias = alias;
+        this.mapper = factory.idMappers != null ? factory.idMappers.get(alias) : null;
+        createTime = System.currentTimeMillis();
+        refreshPeriodInMillis = this.factory.getRefreshPeriodInMillis();
+
+        Doctype doctype = Util.getDOCTYPEFromFacesContextAttributes(FacesContext.getCurrentInstance());
+        if (null != doctype) {
+            // This will happen on the request that causes the facelets to be compiled
+            setSavedDoctype(doctype);
+        }
+
+        String XMLDECL = Util.getXMLDECLFromFacesContextAttributes(FacesContext.getCurrentInstance());
+        if (null != XMLDECL) {
+            // This will happen on the request that causes the facelets to be compiled
+            setSavedXMLDecl(XMLDECL);
+        }
+
+    }
+
+    @Override
+    public void applyMetadata(FacesContext facesContext, UIComponent parent) throws IOException {
+        // Call apply, since a DefaultFacelet instance will be specifically created to only
+        // hold the Metadata in advance.
+        apply(facesContext, parent);
+    }
+
+    /**
+     * @see jakarta.faces.view.facelets.Facelet#apply(jakarta.faces.context.FacesContext,
+     *      jakarta.faces.component.UIComponent)
+     */
+    @Override
+    public void apply(FacesContext facesContext, UIComponent parent) throws IOException {
+
+        IdMapper idMapper = IdMapper.getMapper(facesContext);
+        boolean mapperSet = false;
+        if (idMapper == null && this.mapper != null) {
+            IdMapper.setMapper(facesContext, mapper);
+            mapperSet = true;
+        }
+
+        DefaultFaceletContext ctx = new DefaultFaceletContext(facesContext, this);
+        refresh(parent);
+        ComponentSupport.markForDeletion(parent);
+        root.apply(ctx, parent);
+        ComponentSupport.finalizeForDeletion(parent);
+        markApplied(parent);
+
+        if (mapperSet) {
+            IdMapper.setMapper(facesContext, null);
+        }
+
+    }
+
+    private void refresh(UIComponent c) {
+        if (refreshPeriodInMillis > 0) {
+
+            // finally remove any children marked as deleted
+            int sz = c.getChildCount();
+            if (sz > 0) {
+                List<UIComponent> cl = c.getChildren();
+                ApplyToken token;
+                while (--sz >= 0) {
+                    UIComponent cc = cl.get(sz);
+                    if (!cc.isTransient()) {
+                        token = (ApplyToken) cc.getTransientStateHelper().getTransient(APPLIED_KEY);
+                        if (token != null && token.time < createTime && token.alias.equals(alias)) {
+                            if (log.isLoggable(Level.INFO)) {
+                                DateFormat df = SimpleDateFormat.getTimeInstance();
+                                log.info("Facelet[" + alias + "] was modified @ " + df.format(new Date(createTime))
+                                        + ", flushing component applied @ " + df.format(new Date(token.time)));
+                            }
+                            cl.remove(sz);
+                        }
+                    }
+                }
+            }
+
+            // remove any facets marked as deleted
+            if (c.getFacets().size() > 0) {
+                Collection<UIComponent> col = c.getFacets().values();
+                UIComponent fc;
+                ApplyToken token;
+                for (Iterator<UIComponent> itr = col.iterator(); itr.hasNext();) {
+                    fc = itr.next();
+                    if (!fc.isTransient()) {
+                        token = (ApplyToken) fc.getTransientStateHelper().getTransient(APPLIED_KEY);
+                        if (token != null && token.time < createTime && token.alias.equals(alias)) {
+                            if (log.isLoggable(Level.INFO)) {
+                                DateFormat df = SimpleDateFormat.getTimeInstance();
+                                log.info("Facelet[" + alias + "] was modified @ " + df.format(new Date(createTime))
+                                        + ", flushing component applied @ " + df.format(new Date(token.time)));
+                            }
+                            itr.remove();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void markApplied(UIComponent parent) {
+        if (refreshPeriodInMillis > 0) {
+            Iterator<UIComponent> itr = parent.getFacetsAndChildren();
+            ApplyToken token = new ApplyToken(alias, System.currentTimeMillis() + refreshPeriodInMillis);
+            while (itr.hasNext()) {
+                UIComponent c = itr.next();
+                if (!c.isTransient()) {
+                    TransientStateHelper state = c.getTransientStateHelper();
+                    if (state.getTransient(APPLIED_KEY) == null) {
+                        state.putTransient(APPLIED_KEY, token);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Return the alias name for error messages and logging
+     *
+     * @return alias name
+     */
+    public String getAlias() {
+        return alias;
+    }
+
+    /**
+     * Return this Facelet's ExpressionFactory instance
+     *
+     * @return internal ExpressionFactory instance
+     */
+    public ExpressionFactory getExpressionFactory() {
+        return elFactory;
+    }
+
+    /**
+     * The time when this Facelet was created, NOT the URL source code
+     *
+     * @return final timestamp of when this Facelet was created
+     */
+    public long getCreateTime() {
+        return createTime;
+    }
+
+    /**
+     * Delegates resolution to DefaultFaceletFactory reference. Also, caches URLs for absolute paths.
+     *
+     * @param relativePath a relative url path
+     * @return URL pointing to destination
+     * @throws IOException if there is a problem creating the URL for the path specified
+     */
+    private URL resolveURL(String relativePath) throws IOException {
+        return factory.resolveURL(src, relativePath);
+    }
+
+    /**
+     * The URL this Facelet was created from.
+     *
+     * @return the URL this Facelet was created from
+     */
+    public URL getSource() {
+        return src;
+    }
+
+    /**
+     * Given the passed FaceletContext, apply our child FaceletHandlers to the passed parent
+     *
+     * @see FaceletHandler#apply(FaceletContext, UIComponent)
+     * @param ctx the FaceletContext to use for applying our FaceletHandlers
+     * @param parent the parent component to apply changes to
+     * @throws IOException
+     * @throws FacesException
+     * @throws FaceletException
+     * @throws ELException
+     */
+    private void include(DefaultFaceletContext ctx, UIComponent parent) throws IOException {
+        refresh(parent);
+        Object included = ctx.getAttribute(INCLUDED_KEY);
+        try {
+            ctx.setAttribute(INCLUDED_KEY, true); // to signal MetataHandler that we're basically in a template.
+            root.apply(new DefaultFaceletContext(ctx, this), parent);
+        } finally {
+            ctx.setAttribute(INCLUDED_KEY, included);
+        }
+        markApplied(parent);
+    }
+
+    /**
+     * Used for delegation by the DefaultFaceletContext. First validates that the path does not represent
+     * a contracts resource, then pulls the URL from {@link #resolveURL(String)}, then calls
+     * {@link #include(DefaultFaceletContext, jakarta.faces.component.UIComponent, String)}.
+     *
+     * @see FaceletContext#includeFacelet(UIComponent, String)
+     * @param ctx FaceletContext to pass to the included Facelet
+     * @param parent UIComponent to apply changes to
+     * @param relativePath relative path to the desired Facelet from the FaceletContext
+     * @throws IOException
+     * @throws FacesException
+     * @throws FaceletException
+     * @throws ELException
+     */
+    public void include(DefaultFaceletContext ctx, UIComponent parent, String relativePath) throws IOException {
+        URL url;
+        if (relativePath.equals(JAKARTA_FACES_ERROR_XHTML)) {
+            if (isDevelopment(ctx)) {
+                // try using this class' ClassLoader
+                url = getErrorFacelet(DefaultFacelet.class.getClassLoader());
+                if (url == null) {
+                    url = getErrorFacelet(Util.getCurrentLoader(this));
+                }
+            } else {
+                return;
+            }
+        } else {
+            if (factory.isContractsResource(new URL(src, relativePath))) {
+                throw new IOException("Contract resources cannot be accessed this way");
+            }
+            url = resolveURL(relativePath);
+        }
+        this.include(ctx, parent, url);
+    }
+
+    /**
+     * Grabs a DefaultFacelet from referenced DefaultFaceletFacotry
+     *
+     * @see DefaultFaceletFactory#getFacelet(FacesContext,URL)
+     * @param ctx FaceletContext to pass to the included Facelet
+     * @param parent UIComponent to apply changes to
+     * @param url URL source to include Facelet from
+     * @throws IOException
+     * @throws FacesException
+     * @throws FaceletException
+     * @throws ELException
+     */
+    public void include(DefaultFaceletContext ctx, UIComponent parent, URL url) throws IOException {
+        DefaultFacelet f = (DefaultFacelet) factory.getFacelet(ctx.getFacesContext(), url);
+        f.include(ctx, parent);
+    }
+
+    private static class ApplyToken implements Externalizable {
+        public String alias;
+
+        public long time;
+
+        public ApplyToken() {
+        } // For Externalizable
+
+        public ApplyToken(String alias, long time) {
+            this.alias = alias;
+            this.time = time;
+        }
+
+        @Override
+        public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+            alias = in.readUTF();
+            time = in.readLong();
+        }
+
+        @Override
+        public void writeExternal(ObjectOutput out) throws IOException {
+            out.writeUTF(alias);
+            out.writeLong(time);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return alias;
+    }
+
+    // ---------------------------------------------------------- Helper Methods
+
+    @Override
+    public Doctype getSavedDoctype() {
+        return savedDoctype;
+    }
+
+    @Override
+    public void setSavedDoctype(Doctype savedDoctype) {
+        this.savedDoctype = savedDoctype;
+    }
+
+    @Override
+    public String getSavedXMLDecl() {
+        return savedXMLDecl;
+    }
+
+    @Override
+    public void setSavedXMLDecl(String savedXMLDecl) {
+        this.savedXMLDecl = savedXMLDecl;
+    }
+
+    // --------------------------------------------------------- Private Methods
+
+    private boolean isDevelopment(FaceletContext ctx) {
+
+        return ctx.getFacesContext().isProjectStage(ProjectStage.Development);
+
+    }
+
+    private URL getErrorFacelet(ClassLoader loader) {
+
+        return loader.getResource("META-INF/error-include.xhtml");
+
+    }
+}

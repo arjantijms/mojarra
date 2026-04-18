@@ -41,11 +41,10 @@ import jakarta.faces.event.PostRestoreStateEvent;
 import jakarta.faces.render.RenderKit;
 import jakarta.faces.render.RenderKitFactory;
 
+import org.glassfish.mojarra.mock.MockRenderKit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import com.sun.faces.mock.MockRenderKit;
 
 /**
  * <p>
@@ -54,10 +53,10 @@ import com.sun.faces.mock.MockRenderKit;
  */
 public class UIViewRootTestCase extends UIComponentBaseTestCase {
 
-    public static String FACTORIES[][] = { { FactoryFinder.APPLICATION_FACTORY, "com.sun.faces.mock.MockApplicationFactory" },
-            { FactoryFinder.FACES_CONTEXT_FACTORY, "com.sun.faces.mock.MockFacesContextFactory" },
-            { FactoryFinder.LIFECYCLE_FACTORY, "com.sun.faces.mock.MockLifecycleFactory" },
-            { FactoryFinder.RENDER_KIT_FACTORY, "com.sun.faces.mock.MockRenderKitFactory" } };
+    public static String FACTORIES[][] = { { FactoryFinder.APPLICATION_FACTORY, "org.glassfish.mojarra.mock.MockApplicationFactory" },
+            { FactoryFinder.FACES_CONTEXT_FACTORY, "org.glassfish.mojarra.mock.MockFacesContextFactory" },
+            { FactoryFinder.LIFECYCLE_FACTORY, "org.glassfish.mojarra.mock.MockLifecycleFactory" },
+            { FactoryFinder.RENDER_KIT_FACTORY, "org.glassfish.mojarra.mock.MockRenderKitFactory" } };
 
     @Override
     @BeforeEach

@@ -16,10 +16,10 @@
 
 package jakarta.faces.mock;
 
-import com.sun.faces.mock.MockFacesContextFactory;
-
 import jakarta.faces.FactoryFinder;
 import jakarta.faces.context.FacesContextFactory;
+
+import org.glassfish.mojarra.mock.MockFacesContextFactory;
 
 public class MockFacesContextFactoryExtender2 extends MockFacesContextFactory {
 

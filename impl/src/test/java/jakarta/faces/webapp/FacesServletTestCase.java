@@ -24,17 +24,16 @@ import jakarta.faces.render.RenderKit;
 import jakarta.faces.render.RenderKitFactory;
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.glassfish.mojarra.junit.JUnitFacesTestCaseBase;
+import org.glassfish.mojarra.mock.MockRenderKit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import com.sun.faces.junit.JUnitFacesTestCaseBase;
-import com.sun.faces.mock.MockRenderKit;
 
 public class FacesServletTestCase extends JUnitFacesTestCaseBase {
 
     // this is private in FacesServlet to not break backwards compatibility
     private static final String ALLOWED_HTTP_METHODS_ATTR_COPY
-            = "com.sun.faces.allowedHttpMethods";
+            = "org.glassfish.mojarra.allowedHttpMethods";
 
     @Override
     @BeforeEach

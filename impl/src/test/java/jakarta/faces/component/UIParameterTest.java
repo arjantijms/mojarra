@@ -21,12 +21,12 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Method;
 
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-
 import jakarta.el.ELContext;
 import jakarta.el.ValueExpression;
 import jakarta.faces.context.FacesContext;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 public class UIParameterTest {
 

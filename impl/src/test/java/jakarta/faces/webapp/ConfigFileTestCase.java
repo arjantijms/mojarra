@@ -26,11 +26,10 @@ import java.net.URL;
 import java.util.Map;
 
 import org.apache.commons.digester.Digester;
+import org.glassfish.mojarra.config.DigesterFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.InputSource;
-
-import com.sun.faces.config.DigesterFactory;
 
 /**
  * <p>

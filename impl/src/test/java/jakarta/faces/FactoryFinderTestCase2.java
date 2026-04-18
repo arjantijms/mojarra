@@ -26,19 +26,19 @@ public class FactoryFinderTestCase2 {
 
         public static String FACTORIES[][] = {
 	{ FactoryFinder.APPLICATION_FACTORY,
-	  "com.sun.faces.mock.MockApplicationFactory"
+	  "org.glassfish.mojarra.mock.MockApplicationFactory"
 	},
 	{ FactoryFinder.EXTERNAL_CONTEXT_FACTORY,
-	  "com.sun.faces.mock.MockExternalContextFactory"
+	  "org.glassfish.mojarra.mock.MockExternalContextFactory"
 	},
 	{ FactoryFinder.FACES_CONTEXT_FACTORY,
-	  "com.sun.faces.mock.MockFacesContextFactory"
+	  "org.glassfish.mojarra.mock.MockFacesContextFactory"
 	},
 	{ FactoryFinder.LIFECYCLE_FACTORY,
-	  "com.sun.faces.mock.MockLifecycleFactory"
+	  "org.glassfish.mojarra.mock.MockLifecycleFactory"
 	},
 	{ FactoryFinder.RENDER_KIT_FACTORY,
-	  "com.sun.faces.mock.MockRenderKitFactory"
+	  "org.glassfish.mojarra.mock.MockRenderKitFactory"
 	}
     };
 
